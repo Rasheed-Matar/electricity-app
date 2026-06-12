@@ -459,6 +459,9 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="sms-prev-lbl">📋 نموذج رسالة الفاتورة</div>
       <div class="sms-prev-txt" id="sms-prev-normal">أضف مشتركاً لمعاينة الرسالة</div>
     </div>
+    <button class="btn-sec" style="margin-top:0;margin-bottom:14px;" onclick="openTplEdit('normal')">
+      ✏️ تعديل صيغة رسالة الفاتورة
+    </button>
     <div class="sec-hdr">إرسال فردي</div>
     <div id="sms-indiv-normal"></div>
   </div>
@@ -477,6 +480,9 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="sms-prev-lbl" style="color:var(--red);">📋 نموذج رسالة التذكير</div>
       <div class="sms-prev-txt" id="sms-prev-reminder">لا يوجد مشتركون متأخرون</div>
     </div>
+    <button class="btn-sec" style="margin-top:0;margin-bottom:14px;" onclick="openTplEdit('reminder')">
+      ✏️ تعديل صيغة رسالة التذكير
+    </button>
     <div class="sec-hdr">المتأخرون في الدفع</div>
     <div id="sms-indiv-reminder"></div>
   </div>
@@ -554,6 +560,26 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <span id="sms-send-btn-txt">إرسال</span>
     </button>
     <button class="btn-sec" onclick="cm('mSms')">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: EDIT MESSAGE TEMPLATE ══ -->
+<div class="mback" id="mTpl">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="mTpl-title">✏️ تعديل صيغة الرسالة</div>
+    <div style="font-size:12px;color:var(--text2);background:var(--bg);padding:10px 12px;border-radius:10px;margin-bottom:10px;line-height:1.9;">
+      المتغيرات المتاحة:<br>
+      <code>{name}</code> الاسم — <code>{prev}</code> القراءة السابقة — <code>{curr}</code> القراءة الحالية — <code>{cons}</code> الاستهلاك — <code>{week}</code> الأسبوع — <code>{owed}</code> المبلغ المستحق — <code>{accumulated}</code> المتراكم السابق<br>
+      <span id="mTpl-extra-vars" style="display:none;"><code>{unpaidCount}</code> عدد الفواتير المعلقة — <code>{unpaidWeeks}</code> قائمة الفترات المعلقة</span>
+    </div>
+    <div class="fg"><textarea class="sms-edit-area" id="tpl-edit-text" style="min-height:220px;"></textarea></div>
+    <button class="btn-main" onclick="saveTpl()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      حفظ الصيغة
+    </button>
+    <button class="btn-sec" onclick="resetTpl()">↺ استعادة الصيغة الافتراضية</button>
+    <button class="btn-sec" onclick="cm('mTpl')">إلغاء</button>
   </div>
 </div>
 
@@ -944,6 +970,45 @@ function setSmsType(t) {
 }
 
 // رسالة الفاتورة الأساسية
+// ── MESSAGE TEMPLATES ──
+const TPL_KEY='elec_v4_tpl';
+const DEFAULT_TPL_NORMAL=`مشتركنا العزيز {name} :
+القراءة السابقة : {prev}
+القراءة الحالية : {curr}
+الاستهلاك : {cons} ك.و.س
+{accumulatedLine}
+المبلغ المستحق : {owed} ₪
+
+يرجى السداد في أقرب وقت ممكن`;
+const DEFAULT_TPL_REMINDER=`مشتركنا العزيز {name} ،
+
+نذكّركم بوجود مبالغ مستحقة غير مسددة:
+📋 الفواتير المعلقة: {unpaidCount} فاتورة
+🗓 الفترات: {unpaidWeeks}
+💰 الإجمالي المستحق: {owed} ₪
+
+نرجو منكم السداد في أقرب وقت ممكن لتجنب أي انقطاع.
+شكراً لتعاونكم 🙏`;
+
+function getTpl(type){
+  const all=JSON.parse(localStorage.getItem(TPL_KEY)||'{}');
+  return all[type] || (type==='reminder'?DEFAULT_TPL_REMINDER:DEFAULT_TPL_NORMAL);
+}
+function setTpl(type,val){
+  const all=JSON.parse(localStorage.getItem(TPL_KEY)||'{}');
+  all[type]=val;
+  localStorage.setItem(TPL_KEY,JSON.stringify(all));
+}
+
+function fillTpl(tpl,vars){
+  let out=tpl;
+  Object.keys(vars).forEach(k=>{
+    out=out.split('{'+k+'}').join(vars[k]);
+  });
+  return out;
+}
+
+// رسالة الفاتورة الأساسية
 function buildNormalMsg(s) {
   const p=price(s);
   const invs=s.invoices||[];
@@ -952,10 +1017,18 @@ function buildNormalMsg(s) {
   if(!last) return `مشتركنا العزيز ${s.name} :\nلا توجد فواتير.`;
   const lb=calcInv(last,p);
   const unpaidN=invs.filter(i=>!i.paid).length;
-  let msg=`مشتركنا العزيز ${s.name} :\nالقراءة السابقة : ${last.prevReading}\nالقراءة الحالية : ${last.currReading}\nالاستهلاك : ${lb.cons} ك.و.س\n`;
-  if(unpaidN>1) msg+=`المتراكم : ${(owed-lb.amt).toFixed(2)} ₪\n`;
-  msg+=`\nالمبلغ المستحق : ${owed.toFixed(2)} ₪\n\nيرجى السداد في أقرب وقت ممكن`;
-  return msg;
+  const accumulated=owed-lb.amt;
+  const accumulatedLine = unpaidN>1 ? `المتراكم : ${accumulated.toFixed(2)} ₪` : '';
+  return fillTpl(getTpl('normal'),{
+    name:s.name,
+    prev:last.prevReading,
+    curr:last.currReading,
+    cons:lb.cons,
+    week:last.week,
+    owed:owed.toFixed(2),
+    accumulated:accumulated.toFixed(2),
+    accumulatedLine:accumulatedLine
+  });
 }
 
 // رسالة التذكير للمتأخرين
@@ -964,7 +1037,37 @@ function buildReminderMsg(s) {
   const invs=s.invoices||[];
   const unpaidN=invs.filter(i=>!i.paid).length;
   const unpaidWeeks=invs.filter(i=>!i.paid).map(i=>i.week).join('، ');
-  return `مشتركنا العزيز ${s.name} ،\n\nنذكّركم بوجود مبالغ مستحقة غير مسددة:\n📋 الفواتير المعلقة: ${unpaidN} فاتورة\n🗓 الفترات: ${unpaidWeeks}\n💰 الإجمالي المستحق: ${owed.toFixed(2)} ₪\n\nنرجو منكم السداد في أقرب وقت ممكن لتجنب أي انقطاع.\nشكراً لتعاونكم 🙏`;
+  const last=invs.length?invs[invs.length-1]:null;
+  return fillTpl(getTpl('reminder'),{
+    name:s.name,
+    owed:owed.toFixed(2),
+    unpaidCount:unpaidN,
+    unpaidWeeks:unpaidWeeks,
+    prev:last?last.prevReading:'',
+    curr:last?last.currReading:'',
+    cons:last?calcInv(last,price(s)).cons:'',
+    week:last?last.week:''
+  });
+}
+
+// ── TEMPLATE EDITOR ──
+let tplEditType='normal';
+function openTplEdit(type){
+  tplEditType=type;
+  document.getElementById('mTpl-title').textContent = type==='reminder' ? '✏️ تعديل صيغة رسالة التذكير' : '✏️ تعديل صيغة رسالة الفاتورة';
+  document.getElementById('mTpl-extra-vars').style.display = type==='reminder' ? 'inline' : 'none';
+  document.getElementById('tpl-edit-text').value=getTpl(type);
+  document.getElementById('mTpl').classList.add('on');
+}
+function saveTpl(){
+  setTpl(tplEditType,document.getElementById('tpl-edit-text').value);
+  cm('mTpl');renderSMS();toast('✅ تم حفظ صيغة الرسالة');
+}
+function resetTpl(){
+  const def=tplEditType==='reminder'?DEFAULT_TPL_REMINDER:DEFAULT_TPL_NORMAL;
+  document.getElementById('tpl-edit-text').value=def;
+  setTpl(tplEditType,def);
+  renderSMS();toast('↺ تم استعادة الصيغة الافتراضية');
 }
 
 function renderSMS() {
@@ -1076,6 +1179,7 @@ document.getElementById('mEdit').addEventListener('click',function(e){if(e.targe
 document.getElementById('mInv').addEventListener('click',function(e){if(e.target===this)cm('mInv');});
 document.getElementById('mSms').addEventListener('click',function(e){if(e.target===this)cm('mSms');});
 document.getElementById('mWeek').addEventListener('click',function(e){if(e.target===this)cm('mWeek');});
+document.getElementById('mTpl').addEventListener('click',function(e){if(e.target===this)cm('mTpl');});
 function setPM(m){
   pmMode=m;
   document.getElementById('pmG').classList.toggle('on',m==='global');
