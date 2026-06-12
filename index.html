@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="كهرباء">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>إدارة اشتراكات الكهرباء</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --navy:#1a3a5c;--navy-dark:#112843;--navy-light:#2a5080;
+  --gold:#f0a500;--gold-light:#ffd166;
+  --bg:#f0f4f8;--card:#fff;
+  --text:#1a2332;--text2:#5a6a7e;--text3:#8fa0b4;
+  --green:#00b894;--green-bg:#e8faf6;--green-dark:#00916e;
+  --red:#e17055;--red-bg:#fef0ec;
+  --amber:#f0a500;--amber-bg:#fff8e8;
+  --purple:#7c3aed;--purple-bg:#f0e8ff;
+  --border:#e4ecf4;
+  --r:18px;--rsm:12px;
+  --sh:0 2px 12px rgba(26,58,92,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(135deg,var(--navy-dark),var(--navy) 55%,var(--navy-light));flex-shrink:0;padding-top:env(safe-area-inset-top,0);}
+.hdr-inner{padding:16px 18px 0;position:relative;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-ico{width:38px;height:38px;background:rgba(255,255,255,0.13);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;}
+.brand h1{font-size:15px;font-weight:700;color:#fff;}
+.brand p{font-size:11px;color:rgba(255,255,255,0.55);}
+.hdr-date{font-size:11px;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.1);padding:5px 10px;border-radius:20px;}
+
+/* big stats */
+.big-stats{display:grid;grid-template-columns:repeat(4,1fr);padding:0 0 18px;}
+.bstat{text-align:center;padding:8px 4px;border-left:1px solid rgba(255,255,255,0.08);}
+.bstat:last-child{border-left:none;}
+.bstat-n{font-size:19px;font-weight:800;color:#fff;line-height:1;}
+.bstat-n.gold{color:var(--gold-light);}
+.bstat-n.red{color:#ff9f9f;}
+.bstat-n.green{color:#9affd8;}
+.bstat-l{font-size:10px;color:rgba(255,255,255,0.5);margin-top:3px;}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{flex:1;padding:11px 3px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text3);font-family:'Tajawal',sans-serif;font-size:10px;position:relative;transition:color .2s;}
+.tab svg{width:19px;height:19px;}
+.tab.on{color:var(--navy);}
+.tab.on::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:2px;background:var(--navy);border-radius:2px 2px 0 0;}
+
+/* ── SCROLL ── */
+.wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.scr{display:none;padding:14px;padding-bottom:28px;}
+.scr.on{display:block;}
+
+/* ── DASHBOARD CARDS ── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.dcard{background:var(--card);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.dcard-lbl{font-size:11px;color:var(--text3);margin-bottom:6px;}
+.dcard-val{font-size:24px;font-weight:800;}
+.dcard-val.navy{color:var(--navy);}
+.dcard-val.gold{color:var(--gold);}
+.dcard-val.green{color:var(--green);}
+.dcard-val.red{color:var(--red);}
+.dcard-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* progress bar */
+.prog-card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:14px;}
+.prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.prog-title{font-size:14px;font-weight:700;color:var(--navy);}
+.prog-pct{font-size:20px;font-weight:800;color:var(--green);}
+.prog-bar-bg{height:10px;background:var(--bg);border-radius:10px;overflow:hidden;margin-bottom:10px;}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),#00cec9);border-radius:10px;transition:width .6s ease;}
+.prog-row{display:flex;justify-content:space-between;}
+.prog-item{text-align:center;}
+.prog-item-val{font-size:14px;font-weight:700;}
+.prog-item-lbl{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* price config */
+.price-cfg{background:linear-gradient(135deg,var(--navy),var(--navy-light));border-radius:var(--r);padding:14px;margin-bottom:14px;color:#fff;}
+.price-cfg h3{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:8px;}
+.price-row{display:flex;gap:10px;align-items:center;}
+.price-wrap{flex:1;background:rgba(255,255,255,0.12);border-radius:11px;padding:2px 10px;display:flex;align-items:center;gap:6px;}
+.price-wrap input{flex:1;background:none;border:none;color:#fff;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;width:70px;outline:none;text-align:center;}
+.price-unit{font-size:12px;color:rgba(255,255,255,0.55);}
+.price-save{background:var(--gold);color:var(--navy-dark);border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;font-family:'Tajawal',sans-serif;cursor:pointer;}
+
+/* ── SUBSCRIBER CARD ── */
+.sc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:12px;overflow:hidden;}
+.sc-top{padding:12px 14px 10px;display:flex;align-items:flex-start;gap:11px;}
+.sc-av{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--navy),var(--navy-light));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;}
+.sc-info{flex:1;min-width:0;}
+.sc-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-phone{font-size:12px;color:var(--text2);margin-top:1px;direction:ltr;text-align:right;}
+.badge{font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;flex-shrink:0;}
+.b-ok{background:var(--green-bg);color:var(--green);}
+.b-due{background:var(--amber-bg);color:var(--amber);}
+.b-multi{background:var(--purple-bg);color:var(--purple);}
+
+/* summary strip */
+.sc-strip{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--border);}
+.sc-cell{padding:9px 6px;text-align:center;border-left:1px solid var(--border);}
+.sc-cell:last-child{border-left:none;}
+.sc-cl{font-size:10px;color:var(--text3);margin-bottom:2px;}
+.sc-cv{font-size:14px;font-weight:700;color:var(--navy);}
+.sc-cv.gold{color:var(--gold);}
+.sc-cv.red{color:var(--red);}
+.sc-cv.green{color:var(--green);}
+
+/* total row */
+.sc-total{padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);}
+.sc-total-lbl{font-size:13px;color:var(--text2);}
+.sc-total-val{font-size:17px;font-weight:800;}
+
+/* ACTION BUTTONS */
+.sc-acts{padding:9px 14px 13px;display:flex;gap:7px;}
+.ab{flex:1;padding:8px 3px;border-radius:11px;border:1.5px solid var(--border);background:none;font-family:'Tajawal',sans-serif;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;color:var(--text2);white-space:nowrap;}
+.ab svg{width:13px;height:13px;flex-shrink:0;}
+.ab.ab-new{background:var(--amber-bg);color:var(--amber);border-color:rgba(240,165,0,.3);}
+.ab.ab-hist{color:var(--purple);border-color:rgba(124,58,237,.2);}
+.ab.ab-sms{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ab.ab-edit{color:var(--navy);border-color:rgba(26,58,92,.2);}
+.ab.ab-del{color:var(--red);border-color:rgba(225,112,85,.2);}
+
+/* ── INVOICE HISTORY ── */
+.inv-hist{border-top:1px solid var(--border);}
+.inv-hist-title{padding:9px 14px 5px;font-size:11px;font-weight:700;color:var(--text3);background:var(--bg);}
+.inv-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);background:var(--card);}
+.inv-week{font-size:12px;font-weight:700;color:var(--navy);min-width:60px;}
+.inv-info{flex:1;}
+.inv-read{font-size:11px;color:var(--text2);}
+.inv-amt{font-size:14px;font-weight:800;margin-left:auto;white-space:nowrap;}
+.inv-amt.paid{color:var(--green);}
+.inv-amt.due{color:var(--amber);}
+.ipay-btn{font-size:11px;padding:5px 11px;border-radius:8px;border:none;background:var(--green);color:#fff;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap;}
+.idel-btn{padding:5px 8px;border-radius:8px;border:none;background:var(--red-bg);color:var(--red);font-size:12px;cursor:pointer;}
+
+/* ── PAYMENT SCREEN ── */
+.pay-summary{background:linear-gradient(135deg,var(--navy-dark),var(--navy-light));border-radius:var(--r);padding:16px;margin-bottom:14px;color:#fff;}
+.pay-summary h3{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:12px;}
+.pay-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
+.pay-num{text-align:center;padding:4px;border-left:1px solid rgba(255,255,255,.1);}
+.pay-num:last-child{border-left:none;}
+.pay-num-v{font-size:18px;font-weight:800;}
+.pay-num-v.gold{color:var(--gold-light);}
+.pay-num-v.green{color:#9affd8;}
+.pay-num-v.red{color:#ffadad;}
+.pay-num-l{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
+
+.pay-filters{display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.pay-filters::-webkit-scrollbar{display:none;}
+.pf-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-family:'Tajawal',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);white-space:nowrap;flex-shrink:0;}
+.pf-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.pay-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:10px;overflow:hidden;}
+.pay-card-top{padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.pay-av{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--navy-light));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;}
+.pay-info{flex:1;min-width:0;}
+.pay-name{font-size:14px;font-weight:700;}
+.pay-phone{font-size:11px;color:var(--text2);margin-top:1px;direction:ltr;text-align:right;}
+.pay-owed{font-size:18px;font-weight:800;color:var(--red);white-space:nowrap;}
+.pay-invoices{border-top:1px solid var(--border);}
+.pi-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-top:1px solid var(--border);}
+.pi-week{font-size:12px;font-weight:700;color:var(--navy);min-width:65px;}
+.pi-amt{font-size:14px;font-weight:800;color:var(--amber);margin-left:auto;}
+.pi-pay-btn{background:var(--green);color:#fff;border:none;border-radius:9px;padding:6px 14px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.pi-paid-lbl{font-size:11px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:3px;}
+
+/* ── FORM ── */
+.fsec{margin-bottom:18px;}
+.fsec-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;margin-bottom:9px;padding-right:3px;}
+.fg{margin-bottom:11px;}
+.fl{font-size:13px;color:var(--text2);margin-bottom:4px;display:block;font-weight:500;}
+.fc{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:15px;font-family:'Tajawal',sans-serif;color:var(--text);background:var(--card);outline:none;-webkit-appearance:none;}
+.fc:focus{border-color:var(--navy);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.pm-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.pm-btn{padding:9px;border-radius:11px;border:1.5px solid var(--border);background:none;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);}
+.pm-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.btn-main{width:100%;padding:14px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;border:none;border-radius:var(--r);font-family:'Tajawal',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-main svg{width:19px;height:19px;}
+.btn-sec{width:100%;margin-top:9px;padding:12px;background:none;border:1.5px solid var(--border);border-radius:var(--r);font-family:'Tajawal',sans-serif;font-size:15px;color:var(--text2);cursor:pointer;}
+
+/* ── SMS ── */
+.sms-banner{background:linear-gradient(135deg,#00b894,#00cec9);border-radius:var(--r);padding:16px;margin-bottom:12px;color:#fff;text-align:center;}
+.sms-banner h3{font-size:14px;font-weight:700;margin-bottom:4px;}
+.sms-banner p{font-size:11px;opacity:.85;margin-bottom:12px;}
+.btn-white{display:inline-flex;align-items:center;gap:5px;background:#fff;color:#00b894;border:none;border-radius:20px;padding:9px 20px;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.sms-prev{background:var(--card);border-radius:var(--r);padding:13px 14px;margin-bottom:12px;border-right:4px solid var(--navy);}
+.sms-prev-lbl{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:7px;}
+.sms-prev-txt{font-size:13px;line-height:1.9;color:var(--text2);white-space:pre-line;}
+
+/* ── FILTER ── */
+.fbar{display:flex;gap:8px;margin-bottom:11px;}
+.fbar-sw{flex:1;position:relative;}
+.fbar-sw svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text3);pointer-events:none;}
+.fbar-inp{width:100%;padding:10px 33px 10px 10px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:13px;font-family:'Tajawal',sans-serif;background:var(--card);color:var(--text);outline:none;}
+.fbar-inp:focus{border-color:var(--navy);}
+.fbar-sel{padding:10px 9px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:12px;font-family:'Tajawal',sans-serif;background:var(--card);color:var(--text);outline:none;-webkit-appearance:none;}
+
+/* ── MODAL ── */
+.mback{position:fixed;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(3px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.mback.on{display:flex;}
+.msheet{background:var(--card);border-radius:26px 26px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:430px;max-height:88vh;overflow-y:auto;animation:su .25s ease;}
+@keyframes su{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.mhandle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
+.mtitle{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:16px;}
+
+/* empty */
+.empty{text-align:center;padding:36px 16px;color:var(--text3);}
+.empty-ico{font-size:44px;margin-bottom:10px;}
+.empty h3{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+
+/* toast */
+.toast{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%) translateY(18px);background:var(--navy-dark);color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.ctag{display:inline-flex;align-items:center;font-size:10px;background:var(--amber-bg);color:var(--amber);padding:2px 7px;border-radius:10px;font-weight:600;margin-right:5px;}
+.sms-type-btn{background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:14px 10px;cursor:pointer;font-family:'Tajawal',sans-serif;color:var(--text2);text-align:center;transition:all .2s;}
+.sms-type-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.sec-hdr{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:9px;padding-right:3px;}
+
+/* recent compact list */
+.recent-compact{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.rc-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--border);}
+.rc-row:first-child{border-top:none;}
+.rc-av{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--navy-light));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+.rc-info{flex:1;min-width:0;}
+.rc-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rc-phone{font-size:11px;color:var(--text2);direction:ltr;text-align:right;}
+.rc-amt{font-size:13px;font-weight:800;white-space:nowrap;}
+
+/* compact subscriber card */
+.sc.compact .sc-top{cursor:pointer;}
+.sc-chev{font-size:11px;color:var(--text3);transition:transform .2s;flex-shrink:0;align-self:center;}
+.sc-chev.open{transform:rotate(180deg);}
+.sc-details{display:none;}
+.sc-details.open{display:block;}
+
+/* export bar */
+.export-bar{display:flex;gap:7px;margin-bottom:11px;overflow-x:auto;padding-bottom:2px;}
+.export-bar::-webkit-scrollbar{display:none;}
+.exp-btn{padding:8px 13px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-family:'Tajawal',sans-serif;font-size:11px;font-weight:700;cursor:pointer;color:var(--navy);white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px;}
+.exp-btn svg{width:13px;height:13px;}
+
+/* edit invoice rows in edit modal */
+.eedit-inv{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-bottom:8px;}
+.eedit-inv-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.eedit-inv-hdr span{font-size:12px;font-weight:700;color:var(--navy);}
+.eedit-inv .frow{margin-bottom:0;}
+
+/* sms textarea */
+.sms-edit-area{width:100%;min-height:160px;padding:12px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:13px;font-family:'Tajawal',sans-serif;color:var(--text);background:var(--card);outline:none;resize:vertical;line-height:1.9;white-space:pre-line;}
+.sms-edit-area:focus{border-color:var(--navy);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div class="brand">
+        <div class="brand-ico">⚡</div>
+        <div><h1>اشتراكات الكهرباء</h1><p>إدارة المشتركين والفواتير</p></div>
+      </div>
+      <div class="hdr-date" id="hdrDate"></div>
+    </div>
+    <div class="big-stats">
+      <div class="bstat"><div class="bstat-n" id="bs-total">0</div><div class="bstat-l">مشترك</div></div>
+      <div class="bstat"><div class="bstat-n gold" id="bs-owed">0</div><div class="bstat-l">₪ مطلوب</div></div>
+      <div class="bstat"><div class="bstat-n green" id="bs-paid">0</div><div class="bstat-l">₪ محصّل</div></div>
+      <div class="bstat"><div class="bstat-n red" id="bs-remain">0</div><div class="bstat-l">₪ متبقي</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="sw('dash')" id="tab-dash">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    لوحة
+  </button>
+  <button class="tab" onclick="sw('subs')" id="tab-subs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    المشتركون
+  </button>
+  <button class="tab" onclick="sw('pay')" id="tab-pay">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    الدفع
+  </button>
+  <button class="tab" onclick="sw('add')" id="tab-add">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    إضافة
+  </button>
+  <button class="tab" onclick="sw('sms')" id="tab-sms">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    رسائل
+  </button>
+</div>
+
+<div class="wrap">
+
+<!-- ══ DASHBOARD ══ -->
+<div class="scr on" id="scr-dash">
+  <div class="dash-grid">
+    <div class="dcard">
+      <div class="dcard-lbl">💰 إجمالي المطلوب</div>
+      <div class="dcard-val gold" id="d-total-owed">0 ₪</div>
+      <div class="dcard-sub">من جميع الفواتير</div>
+    </div>
+    <div class="dcard">
+      <div class="dcard-lbl">✅ إجمالي المحصّل</div>
+      <div class="dcard-val green" id="d-total-paid">0 ₪</div>
+      <div class="dcard-sub">فواتير مدفوعة</div>
+    </div>
+    <div class="dcard">
+      <div class="dcard-lbl">⏳ المتبقي للتحصيل</div>
+      <div class="dcard-val red" id="d-total-remain">0 ₪</div>
+      <div class="dcard-sub">فواتير معلقة</div>
+    </div>
+    <div class="dcard">
+      <div class="dcard-lbl">⚡ إجمالي الاستهلاك</div>
+      <div class="dcard-val navy" id="d-total-kwh">0</div>
+      <div class="dcard-sub">ك.و.س لكل المشتركين</div>
+    </div>
+  </div>
+
+  <div class="price-cfg">
+    <h3>⚡ سعر الكيلوواط الافتراضي</h3>
+    <div class="price-row">
+      <div class="price-wrap">
+        <input type="number" id="gPrice" step="0.01" min="0">
+        <span class="price-unit">₪ / ك.و.س</span>
+      </div>
+      <button class="price-save" onclick="saveGP()">حفظ</button>
+    </div>
+  </div>
+
+  <div class="sec-hdr">⚡ آخر المشتركين</div>
+  <div id="dash-recent" class="recent-compact"></div>
+</div>
+
+<!-- ══ SUBSCRIBERS ══ -->
+<div class="scr" id="scr-subs">
+  <div class="export-bar">
+    <button class="exp-btn" onclick="exportPDF('all')">📄 الكل</button>
+    <button class="exp-btn" onclick="exportPDF('due')">⏳ غير المسددين</button>
+    <button class="exp-btn" onclick="exportPDF('paid')">✅ المسددين</button>
+    <button class="exp-btn" onclick="exportPDF('week')">🗓 حسب الأسبوع</button>
+  </div>
+  <div class="fbar">
+    <div class="fbar-sw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="fbar-inp" id="searchQ" placeholder="بحث بالاسم أو الجوال..." oninput="renderSubs()">
+    </div>
+    <select class="fbar-sel" id="fStatus" onchange="renderSubs()">
+      <option value="all">الكل</option>
+      <option value="due">عليه مبلغ</option>
+      <option value="ok">مسدد</option>
+    </select>
+  </div>
+  <div id="subs-list"></div>
+</div>
+
+<!-- ══ PAYMENT TRACKER ══ -->
+<div class="scr" id="scr-pay">
+  <div class="pay-summary">
+    <h3>💳 ملخص الدفعات</h3>
+    <div class="pay-nums">
+      <div class="pay-num"><div class="pay-num-v gold" id="pt-total">0 ₪</div><div class="pay-num-l">إجمالي</div></div>
+      <div class="pay-num"><div class="pay-num-v green" id="pt-paid">0 ₪</div><div class="pay-num-l">محصّل</div></div>
+      <div class="pay-num"><div class="pay-num-v red" id="pt-remain">0 ₪</div><div class="pay-num-l">متبقي</div></div>
+    </div>
+  </div>
+
+  <div class="pay-filters" id="pay-filters">
+    <button class="pf-btn on" onclick="setPayFilter('all',this)">الكل</button>
+    <button class="pf-btn" onclick="setPayFilter('due',this)">لم يدفع</button>
+    <button class="pf-btn" onclick="setPayFilter('partial',this)">دفع جزء</button>
+    <button class="pf-btn" onclick="setPayFilter('done',this)">مسدد</button>
+  </div>
+  <div id="pay-list"></div>
+</div>
+
+<!-- ══ ADD ══ -->
+<div class="scr" id="scr-add">
+  <div class="fsec">
+    <div class="fsec-title">بيانات المشترك</div>
+    <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fc" id="f-name" placeholder="مثال: أحمد محمد سالم"></div>
+    <div class="fg"><label class="fl">رقم الجوال</label><input type="tel" class="fc" id="f-phone" placeholder="059XXXXXXX" style="direction:ltr;text-align:right;"></div>
+  </div>
+  <div class="fsec">
+    <div class="fsec-title">الفاتورة الأولى</div>
+    <div class="fg"><label class="fl">الأسبوع / الفترة</label><input type="text" class="fc" id="f-week" placeholder="مثال: الأسبوع 1 — يونيو 2026"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">القراءة السابقة</label><input type="number" class="fc" id="f-prev" placeholder="0" min="0"></div>
+      <div class="fg"><label class="fl">القراءة الحالية</label><input type="number" class="fc" id="f-curr" placeholder="0" min="0"></div>
+    </div>
+    <div style="background:var(--bg);border-radius:11px;padding:9px 13px;font-size:13px;color:var(--text2);">
+      المبلغ المحسوب: <strong id="f-calc" style="color:var(--navy);font-size:16px;">0 ₪</strong>
+    </div>
+  </div>
+  <div class="fsec">
+    <div class="fsec-title">سعر الكيلوواط</div>
+    <div class="pm-toggle">
+      <button class="pm-btn on" id="pmG" onclick="setPM('global')">الافتراضي</button>
+      <button class="pm-btn" id="pmC" onclick="setPM('custom')">سعر خاص</button>
+    </div>
+    <div id="pmCRow" style="display:none;"><input type="number" class="fc" id="f-cprice" placeholder="0.65" step="0.01" min="0"></div>
+    <div id="pmGNote" style="font-size:12px;color:var(--text3);padding:3px 0;">السعر الافتراضي: <strong id="gPriceNote">0.65</strong> ₪/ك.و.س</div>
+  </div>
+  <button class="btn-main" onclick="addSub()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    إضافة المشترك
+  </button>
+</div>
+
+<!-- ══ SMS ══ -->
+<div class="scr" id="scr-sms">
+
+  <!-- TYPE TOGGLE -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;">
+    <button class="sms-type-btn on" id="smsT1" onclick="setSmsType('normal')">
+      <div style="font-size:18px;margin-bottom:4px;">📄</div>
+      <div style="font-size:13px;font-weight:700;">رسالة الفاتورة</div>
+      <div style="font-size:10px;margin-top:2px;opacity:.75;">قراءات + مبلغ مستحق</div>
+    </button>
+    <button class="sms-type-btn" id="smsT2" onclick="setSmsType('reminder')">
+      <div style="font-size:18px;margin-bottom:4px;">⚠️</div>
+      <div style="font-size:13px;font-weight:700;">رسالة تذكير</div>
+      <div style="font-size:10px;margin-top:2px;opacity:.75;">للمتأخرين فقط</div>
+    </button>
+  </div>
+
+  <!-- SEND ALL — NORMAL -->
+  <div id="sms-block-normal">
+    <div class="sms-banner">
+      <h3>📨 إرسال فاتورة للجميع</h3>
+      <p>رسالة بالقراءات والاستهلاك والمبلغ المستحق لكل مشترك</p>
+      <button class="btn-white" onclick="sendAll('normal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        إرسال للجميع (<span id="sms-cnt">0</span>)
+      </button>
+    </div>
+    <div class="sms-prev">
+      <div class="sms-prev-lbl">📋 نموذج رسالة الفاتورة</div>
+      <div class="sms-prev-txt" id="sms-prev-normal">أضف مشتركاً لمعاينة الرسالة</div>
+    </div>
+    <div class="sec-hdr">إرسال فردي</div>
+    <div id="sms-indiv-normal"></div>
+  </div>
+
+  <!-- SEND ALL — REMINDER -->
+  <div id="sms-block-reminder" style="display:none;">
+    <div class="sms-banner" style="background:linear-gradient(135deg,#e17055,#d63031);">
+      <h3>⚠️ إرسال تذكير للمتأخرين</h3>
+      <p>تُرسل فقط للمشتركين الذين لديهم مبالغ غير مسددة</p>
+      <button class="btn-white" style="color:#e17055;" onclick="sendAll('reminder')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        إرسال للمتأخرين (<span id="sms-cnt-due">0</span>)
+      </button>
+    </div>
+    <div class="sms-prev" style="border-right-color:var(--red);">
+      <div class="sms-prev-lbl" style="color:var(--red);">📋 نموذج رسالة التذكير</div>
+      <div class="sms-prev-txt" id="sms-prev-reminder">لا يوجد مشتركون متأخرون</div>
+    </div>
+    <div class="sec-hdr">المتأخرون في الدفع</div>
+    <div id="sms-indiv-reminder"></div>
+  </div>
+
+</div>
+
+</div><!-- /wrap -->
+</div><!-- /app -->
+
+<!-- ══ MODAL: EDIT SUB ══ -->
+<div class="mback" id="mEdit">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle">✏️ تعديل المشترك</div>
+    <div class="fg"><label class="fl">الاسم</label><input type="text" class="fc" id="e-name"></div>
+    <div class="fg"><label class="fl">الجوال</label><input type="tel" class="fc" id="e-phone" style="direction:ltr;text-align:right;"></div>
+    <div class="fg"><label class="fl">سعر خاص ₪ (اتركه فارغاً للافتراضي)</label><input type="number" class="fc" id="e-cprice" step="0.01" min="0" placeholder="مثال: 0.70"></div>
+    <div class="fsec-title" style="margin-top:10px;">تعديل الفواتير (لتصحيح الأخطاء)</div>
+    <div id="e-invoices"></div>
+    <button class="btn-main" onclick="saveEdit()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      حفظ
+    </button>
+    <button class="btn-sec" onclick="cm('mEdit')">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: NEW INVOICE ══ -->
+<div class="mback" id="mInv">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle">➕ فاتورة أسبوعية جديدة</div>
+    <div id="mInv-subname" style="font-size:13px;color:var(--text2);background:var(--bg);padding:8px 12px;border-radius:10px;margin-bottom:14px;"></div>
+    <div class="fg"><label class="fl">الأسبوع / الفترة</label><input type="text" class="fc" id="inv-week" placeholder="مثال: الأسبوع 2 — يونيو 2026"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">القراءة السابقة</label><input type="number" class="fc" id="inv-prev" placeholder="0" min="0" oninput="updInvCalc()"></div>
+      <div class="fg"><label class="fl">القراءة الحالية</label><input type="number" class="fc" id="inv-curr" placeholder="0" min="0" oninput="updInvCalc()"></div>
+    </div>
+    <div style="background:var(--bg);border-radius:11px;padding:10px 13px;margin-bottom:14px;font-size:13px;color:var(--text2);">
+      المبلغ المحسوب: <strong id="inv-calc" style="color:var(--navy);font-size:18px;">0 ₪</strong>
+    </div>
+    <button class="btn-main" onclick="saveInv()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      إضافة الفاتورة
+    </button>
+    <button class="btn-sec" onclick="cm('mInv')">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: WEEK PICK FOR EXPORT ══ -->
+<div class="mback" id="mWeek">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle">🗓 اختر الأسبوع للتصدير</div>
+    <div class="fg"><select class="fc" id="exp-week-sel"></select></div>
+    <button class="btn-main" onclick="doExportWeek()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      تصدير PDF
+    </button>
+    <button class="btn-sec" onclick="cm('mWeek')">إلغاء</button>
+  </div>
+</div>
+
+<div id="pdf-render" style="position:fixed;top:-9999px;right:0;width:700px;background:#fff;padding:24px;font-family:'Tajawal',sans-serif;direction:rtl;"></div>
+
+<!-- ══ MODAL: EDIT SMS ══ -->
+<div class="mback" id="mSms">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle">✏️ تعديل الرسالة قبل الإرسال</div>
+    <div id="sms-edit-target" style="font-size:12px;color:var(--text2);background:var(--bg);padding:8px 12px;border-radius:10px;margin-bottom:10px;"></div>
+    <div class="fg"><textarea class="sms-edit-area" id="sms-edit-text"></textarea></div>
+    <button class="btn-main" onclick="confirmSend()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <span id="sms-send-btn-txt">إرسال</span>
+    </button>
+    <button class="btn-sec" onclick="cm('mSms')">إلغاء</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK='elec_v4_subs', PK='elec_v4_price';
+let subs=JSON.parse(localStorage.getItem(SK)||'[]');
+let gp=parseFloat(localStorage.getItem(PK)||'0.65');
+let pmMode='global', editId=null, invSubId=null;
+let openHist={}, openDetails={}, payFilter='all';
+
+function save(){localStorage.setItem(SK,JSON.stringify(subs));localStorage.setItem(PK,String(gp));updHeader();}
+function toast(m,d=2500){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),d);}
+
+// ── PRICES & CALCS ──
+function price(s){return(s.customPrice&&s.customPrice>0)?s.customPrice:gp;}
+function calcInv(inv,p){const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));return{cons:c,amt:parseFloat((c*p).toFixed(2))};}
+function subOwed(s){return(s.invoices||[]).filter(i=>!i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
+function subPaidAmt(s){return(s.invoices||[]).filter(i=>i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
+function subTotalAmt(s){return(s.invoices||[]).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
+
+// ── HEADER & DASHBOARD ──
+function updHeader(){
+  const total=subs.reduce((a,s)=>a+subTotalAmt(s),0);
+  const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
+  const remain=subs.reduce((a,s)=>a+subOwed(s),0);
+  document.getElementById('bs-total').textContent=subs.length;
+  document.getElementById('bs-owed').textContent=total.toFixed(0);
+  document.getElementById('bs-paid').textContent=paid.toFixed(0);
+  document.getElementById('bs-remain').textContent=remain.toFixed(0);
+  document.getElementById('hdrDate').textContent=new Date().toLocaleDateString('ar-PS',{day:'numeric',month:'short'});
+  document.getElementById('gPrice').value=gp;
+  document.getElementById('gPriceNote').textContent=gp;
+}
+
+function renderDash(){
+  updHeader();
+  const total=subs.reduce((a,s)=>a+subTotalAmt(s),0);
+  const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
+  const remain=total-paid;
+  const totalKwh=subs.reduce((a,s)=>a+(s.invoices||[]).reduce((b,i)=>b+calcInv(i,price(s)).cons,0),0);
+
+  document.getElementById('d-total-owed').textContent=total.toFixed(2)+' ₪';
+  document.getElementById('d-total-paid').textContent=paid.toFixed(2)+' ₪';
+  document.getElementById('d-total-remain').textContent=remain.toFixed(2)+' ₪';
+  document.getElementById('d-total-kwh').textContent=totalKwh.toFixed(0);
+
+  // recent compact
+  const el=document.getElementById('dash-recent');
+  if(!subs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">👥</div><h3>لا يوجد مشتركون</h3><p>اضغط إضافة لبدء الاستخدام</p></div>`;return;}
+  el.innerHTML=subs.slice(-5).reverse().map(s=>{
+    const owed=subOwed(s);
+    return `<div class="rc-row">
+      <div class="rc-av">${ini(s.name)}</div>
+      <div class="rc-info"><div class="rc-name">${s.name}</div><div class="rc-phone">${s.phone}</div></div>
+      <span class="rc-amt" style="color:${owed>0?'var(--amber)':'var(--green)'}">${owed>0?owed.toFixed(2)+' ₪':'✅'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── SUBSCRIBER CARD ──
+function ini(n){const p=n.trim().split(' ');return p.length>=2?p[0][0]+p[1][0]:n[0]||'?';}
+
+function buildSC(s,showSMS=true){
+  const p=price(s);
+  const invs=s.invoices||[];
+  const last=invs.length?invs[invs.length-1]:null;
+  const owed=subOwed(s);
+  const unpaidN=invs.filter(i=>!i.paid).length;
+  const priceTag=(s.customPrice&&s.customPrice>0)?`<span class="ctag">⭐${s.customPrice}₪</span>`:'';
+
+  let bc='b-ok',bt='✓ مسدد';
+  if(unpaidN===1){bc='b-due';bt='⏳ معلق';}
+  else if(unpaidN>1){bc='b-multi';bt=unpaidN+' فواتير';}
+
+  let strip='', totalRow='';
+  if(last){
+    const lb=calcInv(last,p);
+    strip=`<div class="sc-strip">
+      <div class="sc-cell"><div class="sc-cl">سابقة</div><div class="sc-cv">${last.prevReading}</div></div>
+      <div class="sc-cell"><div class="sc-cl">حالية</div><div class="sc-cv">${last.currReading}</div></div>
+      <div class="sc-cell"><div class="sc-cl">استهلاك</div><div class="sc-cv gold">${lb.cons} ك</div></div>
+    </div>
+    <div class="sc-total">
+      <span class="sc-total-lbl">آخر فاتورة — ${last.week}</span>
+      <span class="sc-total-val" style="color:${last.paid?'var(--green)':'var(--amber)'}">${lb.amt} ₪</span>
+    </div>`;
+    if(owed>0){
+      totalRow=`<div class="sc-total" style="background:var(--red-bg);">
+        <span class="sc-total-lbl" style="color:var(--red);font-weight:700;">💰 إجمالي المستحق (${unpaidN} فاتورة)</span>
+        <span class="sc-total-val" style="color:var(--red);">${owed.toFixed(2)} ₪</span>
+      </div>`;
+    } else if(invs.length>0){
+      totalRow=`<div class="sc-total" style="background:var(--green-bg);">
+        <span class="sc-total-lbl" style="color:var(--green);">✅ جميع الفواتير مسددة</span>
+        <span class="sc-total-val" style="color:var(--green);">0 ₪</span>
+      </div>`;
+    }
+  } else {
+    strip=`<div class="sc-strip">
+      <div class="sc-cell"><div class="sc-cl">فواتير</div><div class="sc-cv">0</div></div>
+      <div class="sc-cell"><div class="sc-cl">مدفوع</div><div class="sc-cv green">0</div></div>
+      <div class="sc-cell"><div class="sc-cl">مستحق</div><div class="sc-cv">0</div></div>
+    </div>`;
+  }
+
+  const histOpen=openHist[s.id];
+  let histHTML='';
+  if(histOpen&&invs.length>0){
+    histHTML=`<div class="inv-hist">
+      <div class="inv-hist-title">📋 سجل الفواتير الأسبوعية (${invs.length})</div>
+      ${[...invs].reverse().map((inv,ri)=>{
+        const ii=invs.length-1-ri;
+        const ib=calcInv(inv,p);
+        return `<div class="inv-row">
+          <div>
+            <div class="inv-week">${inv.week}</div>
+            <div class="inv-read">${inv.prevReading} ← ${inv.currReading} | ${ib.cons} ك.و.س</div>
+          </div>
+          <span class="inv-amt ${inv.paid?'paid':'due'}">${ib.amt} ₪</span>
+          ${!inv.paid?`<button class="ipay-btn" onclick="payInv('${s.id}',${ii})">دفع ✓</button>`:`<span style="font-size:11px;color:var(--green);font-weight:700;">✓ مدفوع</span>`}
+          <button class="idel-btn" onclick="delInv('${s.id}',${ii})">🗑</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const detailsOpen=!!openDetails[s.id];
+
+  return `<div class="sc compact" id="card-${s.id}">
+    <div class="sc-top" onclick="togDetails('${s.id}')">
+      <div class="sc-av">${ini(s.name)}</div>
+      <div class="sc-info"><div class="sc-name">${s.name}</div><div class="sc-phone">${priceTag}${s.phone}</div></div>
+      ${owed>0?`<span class="sc-total-val" style="color:var(--red);font-size:13px;margin-left:4px;">${owed.toFixed(2)} ₪</span>`:''}
+      <span class="badge ${bc}">${bt}</span>
+      <span class="sc-chev ${detailsOpen?'open':''}">▼</span>
+    </div>
+    <div class="sc-details ${detailsOpen?'open':''}">
+      ${strip}${totalRow}
+      <div class="sc-acts">
+        <button class="ab ab-new" onclick="openInv('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>فاتورة
+        </button>
+        <button class="ab ab-hist" onclick="togHist('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>سجل
+        </button>
+        ${showSMS?`<button class="ab ab-sms" onclick="sendOne('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>SMS
+        </button>`:''}
+        <button class="ab ab-edit" onclick="openEdit('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
+        </button>
+        <button class="ab ab-del" onclick="delSub('${s.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+        </button>
+      </div>
+      ${histHTML}
+    </div>
+  </div>`;
+}
+
+function togDetails(id){openDetails[id]=!openDetails[id];renderAll();}
+
+function togHist(id){openHist[id]=!openHist[id];renderAll();}
+
+function renderSubs(){
+  const q=(document.getElementById('searchQ').value||'').toLowerCase();
+  const f=document.getElementById('fStatus').value;
+  const list=subs.filter(s=>{
+    const mq=!q||s.name.toLowerCase().includes(q)||s.phone.includes(q);
+    const owed=subOwed(s);
+    const mf=f==='all'||(f==='due'&&owed>0)||(f==='ok'&&owed===0);
+    return mq&&mf;
+  });
+  const el=document.getElementById('subs-list');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div><h3>لا توجد نتائج</h3></div>`;return;}
+  el.innerHTML=list.map(s=>buildSC(s)).join('');
+}
+
+// ── PAYMENT TRACKER ──
+function setPayFilter(f,btn){
+  payFilter=f;
+  document.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPay();
+}
+
+function renderPay(){
+  const total=subs.reduce((a,s)=>a+subTotalAmt(s),0);
+  const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
+  document.getElementById('pt-total').textContent=total.toFixed(2)+' ₪';
+  document.getElementById('pt-paid').textContent=paid.toFixed(2)+' ₪';
+  document.getElementById('pt-remain').textContent=(total-paid).toFixed(2)+' ₪';
+
+  let list=subs;
+  if(payFilter==='due') list=subs.filter(s=>subOwed(s)>0&&subPaidAmt(s)===0);
+  else if(payFilter==='partial') list=subs.filter(s=>subOwed(s)>0&&subPaidAmt(s)>0);
+  else if(payFilter==='done') list=subs.filter(s=>subOwed(s)===0&&(s.invoices||[]).length>0);
+
+  const el=document.getElementById('pay-list');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🎉</div><h3>${payFilter==='done'?'لا يوجد مسددون بعد':'لا توجد نتائج'}</h3></div>`;return;}
+
+  el.innerHTML=list.map(s=>{
+    const p=price(s);
+    const invs=s.invoices||[];
+    const owed=subOwed(s);
+    const paidAmt=subPaidAmt(s);
+    const unpaidInvs=invs.filter(i=>!i.paid);
+    const paidInvs=invs.filter(i=>i.paid);
+
+    return `<div class="pay-card">
+      <div class="pay-card-top">
+        <div class="pay-av">${ini(s.name)}</div>
+        <div class="pay-info">
+          <div class="pay-name">${s.name}</div>
+          <div class="pay-phone">${s.phone}</div>
+          ${paidAmt>0?`<div style="font-size:11px;color:var(--green);margin-top:2px;">✓ دفع ${paidAmt.toFixed(2)} ₪</div>`:''}
+        </div>
+        <div class="pay-owed">${owed>0?owed.toFixed(2)+' ₪':'✅'}</div>
+      </div>
+      ${unpaidInvs.length?`<div class="pay-invoices">
+        <div style="padding:7px 14px;font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);">⏳ فواتير معلقة</div>
+        ${unpaidInvs.map((inv,i)=>{
+          const ii=invs.indexOf(inv);
+          const ib=calcInv(inv,p);
+          return `<div class="pi-row">
+            <span class="pi-week">${inv.week}</span>
+            <span style="font-size:11px;color:var(--text2);">${ib.cons} ك.و.س</span>
+            <span class="pi-amt">${ib.amt} ₪</span>
+            <button class="pi-pay-btn" onclick="payInv('${s.id}',${ii})">دفع ✓</button>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+      ${paidInvs.length?`<div class="pay-invoices">
+        <div style="padding:7px 14px;font-size:11px;font-weight:700;color:var(--green);background:var(--green-bg);">✅ فواتير مدفوعة</div>
+        ${paidInvs.map(inv=>{
+          const ib=calcInv(inv,p);
+          return `<div class="pi-row">
+            <span class="pi-week">${inv.week}</span>
+            <span style="font-size:11px;color:var(--text2);">${ib.cons} ك.و.س</span>
+            <span class="pi-amt" style="color:var(--green);">${ib.amt} ₪</span>
+            <span class="pi-paid-lbl">✓ مدفوع</span>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── INVOICES ──
+function payInv(subId,ii){
+  const s=subs.find(x=>x.id===subId);if(!s)return;
+  s.invoices[ii].paid=true;
+  save();renderAll();toast('✅ تم تسجيل الدفع');
+}
+function delInv(subId,ii){
+  const s=subs.find(x=>x.id===subId);
+  if(!s||!confirm('حذف هذه الفاتورة؟'))return;
+  s.invoices.splice(ii,1);save();renderAll();toast('🗑️ تم الحذف');
+}
+function openInv(id){
+  const s=subs.find(x=>x.id===id);if(!s)return;
+  invSubId=id;
+  document.getElementById('mInv-subname').textContent='👤 '+s.name;
+  const last=s.invoices&&s.invoices.length?s.invoices[s.invoices.length-1]:null;
+  document.getElementById('inv-prev').value=last?last.currReading:'';
+  document.getElementById('inv-curr').value='';
+  document.getElementById('inv-calc').textContent='0 ₪';
+  // default week label
+  const n=new Date();
+  const wk=Math.ceil(n.getDate()/7);
+  document.getElementById('inv-week').value=`الأسبوع ${wk} — ${n.toLocaleDateString('ar-PS',{month:'long',year:'numeric'})}`;
+  document.getElementById('mInv').classList.add('on');
+}
+function updInvCalc(){
+  const pr=parseFloat(document.getElementById('inv-prev').value||'0');
+  const cr=parseFloat(document.getElementById('inv-curr').value||'0');
+  const s=subs.find(x=>x.id===invSubId);
+  if(!s)return;
+  const cons=Math.max(0,cr-pr);
+  document.getElementById('inv-calc').textContent=(cons*price(s)).toFixed(2)+' ₪';
+}
+function saveInv(){
+  const week=document.getElementById('inv-week').value.trim();
+  const prev=parseFloat(document.getElementById('inv-prev').value||'0');
+  const curr=parseFloat(document.getElementById('inv-curr').value||'0');
+  if(!week){toast('⚠️ أدخل اسم الأسبوع');return;}
+  if(curr<prev){toast('⚠️ القراءة الحالية أقل من السابقة');return;}
+  const s=subs.find(x=>x.id===invSubId);if(!s)return;
+  if(!s.invoices)s.invoices=[];
+  s.invoices.push({id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false});
+  save();cm('mInv');renderAll();toast(`✅ تمت إضافة الفاتورة لـ ${s.name}`);
+}
+
+// ── ADD SUB ──
+function addSub(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  const week=document.getElementById('f-week').value.trim();
+  const prev=parseFloat(document.getElementById('f-prev').value||'0');
+  const curr=parseFloat(document.getElementById('f-curr').value||'0');
+  if(!name){toast('⚠️ أدخل الاسم');return;}
+  if(!phone){toast('⚠️ أدخل الجوال');return;}
+  if(!week){toast('⚠️ أدخل اسم الأسبوع');return;}
+  if(curr<prev){toast('⚠️ القراءة الحالية أقل من السابقة');return;}
+  let cp=null;
+  if(pmMode==='custom'){const v=parseFloat(document.getElementById('f-cprice').value);if(!isNaN(v)&&v>0)cp=v;}
+  const inv={id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false};
+  subs.push({id:Date.now().toString(),name,phone,customPrice:cp,invoices:[inv]});
+  save();
+  ['f-name','f-phone','f-week','f-prev','f-curr','f-cprice'].forEach(i=>document.getElementById(i).value='');
+  updAddCalc();
+  toast(`✅ تمت إضافة ${name}`);sw('subs');
+}
+function updAddCalc(){
+  const pr=parseFloat(document.getElementById('f-prev').value||'0');
+  const cr=parseFloat(document.getElementById('f-curr').value||'0');
+  const cp=pmMode==='custom'?parseFloat(document.getElementById('f-cprice').value||'0'):gp;
+  const p=cp>0?cp:gp;
+  document.getElementById('f-calc').textContent=(Math.max(0,cr-pr)*p).toFixed(2)+' ₪';
+}
+document.getElementById('f-prev').addEventListener('input',updAddCalc);
+document.getElementById('f-curr').addEventListener('input',updAddCalc);
+document.getElementById('f-cprice').addEventListener('input',updAddCalc);
+
+// ── EDIT ──
+function openEdit(id){
+  const s=subs.find(x=>x.id===id);if(!s)return;
+  editId=id;
+  document.getElementById('e-name').value=s.name;
+  document.getElementById('e-phone').value=s.phone;
+  document.getElementById('e-cprice').value=(s.customPrice&&s.customPrice>0)?s.customPrice:'';
+  const invs=s.invoices||[];
+  const el=document.getElementById('e-invoices');
+  if(!invs.length){
+    el.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">لا توجد فواتير</div>`;
+  } else {
+    el.innerHTML=invs.map((inv,i)=>`
+      <div class="eedit-inv">
+        <div class="eedit-inv-hdr">
+          <span>فاتورة #${i+1}</span>
+          <label style="font-size:12px;display:flex;align-items:center;gap:5px;color:var(--text2);">
+            <input type="checkbox" id="ei-paid-${i}" ${inv.paid?'checked':''} style="width:16px;height:16px;"> مدفوعة
+          </label>
+        </div>
+        <div class="fg"><input type="text" class="fc" id="ei-week-${i}" value="${inv.week}" placeholder="الأسبوع"></div>
+        <div class="frow">
+          <div class="fg"><input type="number" class="fc" id="ei-prev-${i}" value="${inv.prevReading}" placeholder="القراءة السابقة"></div>
+          <div class="fg"><input type="number" class="fc" id="ei-curr-${i}" value="${inv.currReading}" placeholder="القراءة الحالية"></div>
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('mEdit').classList.add('on');
+}
+function saveEdit(){
+  const s=subs.find(x=>x.id===editId);if(!s)return;
+  s.name=document.getElementById('e-name').value.trim();
+  s.phone=document.getElementById('e-phone').value.trim();
+  const cp=document.getElementById('e-cprice').value;
+  s.customPrice=(cp&&parseFloat(cp)>0)?parseFloat(cp):null;
+  (s.invoices||[]).forEach((inv,i)=>{
+    const wk=document.getElementById('ei-week-'+i);
+    if(!wk)return;
+    inv.week=wk.value.trim();
+    inv.prevReading=parseFloat(document.getElementById('ei-prev-'+i).value||'0');
+    inv.currReading=parseFloat(document.getElementById('ei-curr-'+i).value||'0');
+    inv.paid=document.getElementById('ei-paid-'+i).checked;
+  });
+  save();cm('mEdit');renderAll();toast('✅ تم الحفظ');
+}
+
+function delSub(id){
+  const s=subs.find(x=>x.id===id);
+  if(!s||!confirm(`حذف "${s.name}"؟`))return;
+  subs=subs.filter(x=>x.id!==id);save();renderAll();toast('🗑️ تم الحذف');
+}
+
+// ── SMS ──
+let smsType = 'normal';
+
+function setSmsType(t) {
+  smsType = t;
+  document.getElementById('smsT1').classList.toggle('on', t==='normal');
+  document.getElementById('smsT2').classList.toggle('on', t==='reminder');
+  document.getElementById('sms-block-normal').style.display = t==='normal'?'block':'none';
+  document.getElementById('sms-block-reminder').style.display = t==='reminder'?'block':'none';
+}
+
+// رسالة الفاتورة الأساسية
+function buildNormalMsg(s) {
+  const p=price(s);
+  const invs=s.invoices||[];
+  const last=invs.length?invs[invs.length-1]:null;
+  const owed=subOwed(s);
+  if(!last) return `مشتركنا العزيز ${s.name} :\nلا توجد فواتير.`;
+  const lb=calcInv(last,p);
+  const unpaidN=invs.filter(i=>!i.paid).length;
+  let msg=`مشتركنا العزيز ${s.name} :\nالقراءة السابقة : ${last.prevReading}\nالقراءة الحالية : ${last.currReading}\nالاستهلاك : ${lb.cons} ك.و.س\n`;
+  if(unpaidN>1) msg+=`المتراكم : ${(owed-lb.amt).toFixed(2)} ₪\n`;
+  msg+=`\nالمبلغ المستحق : ${owed.toFixed(2)} ₪\n\nيرجى السداد في أقرب وقت ممكن`;
+  return msg;
+}
+
+// رسالة التذكير للمتأخرين
+function buildReminderMsg(s) {
+  const owed=subOwed(s);
+  const invs=s.invoices||[];
+  const unpaidN=invs.filter(i=>!i.paid).length;
+  const unpaidWeeks=invs.filter(i=>!i.paid).map(i=>i.week).join('، ');
+  return `مشتركنا العزيز ${s.name} ،\n\nنذكّركم بوجود مبالغ مستحقة غير مسددة:\n📋 الفواتير المعلقة: ${unpaidN} فاتورة\n🗓 الفترات: ${unpaidWeeks}\n💰 الإجمالي المستحق: ${owed.toFixed(2)} ₪\n\nنرجو منكم السداد في أقرب وقت ممكن لتجنب أي انقطاع.\nشكراً لتعاونكم 🙏`;
+}
+
+function renderSMS() {
+  const dueSubs = subs.filter(s=>subOwed(s)>0);
+  document.getElementById('sms-cnt').textContent = subs.length;
+  document.getElementById('sms-cnt-due').textContent = dueSubs.length;
+
+  // normal preview
+  const normalPrev = subs.length ? buildNormalMsg(subs[0]) : 'أضف مشتركاً لمعاينة الرسالة';
+  document.getElementById('sms-prev-normal').textContent = normalPrev;
+
+  // reminder preview
+  const reminderPrev = dueSubs.length ? buildReminderMsg(dueSubs[0]) : 'لا يوجد مشتركون متأخرون ✅';
+  document.getElementById('sms-prev-reminder').textContent = reminderPrev;
+
+  // normal individual list
+  const n1 = document.getElementById('sms-indiv-normal');
+  if(!subs.length) {
+    n1.innerHTML=`<div class="empty"><div class="empty-ico">📭</div><h3>لا يوجد مشتركون</h3></div>`;
+  } else {
+    n1.innerHTML = subs.map(s => buildSmsCard(s,'normal')).join('');
+  }
+
+  // reminder individual list
+  const n2 = document.getElementById('sms-indiv-reminder');
+  if(!dueSubs.length) {
+    n2.innerHTML=`<div class="empty"><div class="empty-ico">🎉</div><h3>جميع المشتركين سددوا!</h3></div>`;
+  } else {
+    n2.innerHTML = dueSubs.map(s => buildSmsCard(s,'reminder')).join('');
+  }
+}
+
+function buildSmsCard(s, type) {
+  const owed = subOwed(s);
+  const unpaidN = (s.invoices||[]).filter(i=>!i.paid).length;
+  const color = type==='reminder' ? 'var(--red)' : (owed>0?'var(--amber)':'var(--green)');
+  const label = type==='reminder'
+    ? `${unpaidN} فاتورة معلقة`
+    : (owed>0 ? owed.toFixed(2)+' ₪' : '✅ مسدد');
+  const btnColor = type==='reminder'
+    ? 'background:linear-gradient(135deg,var(--red),#d63031);'
+    : 'background:linear-gradient(135deg,var(--navy),var(--navy-light));';
+  const btnTxt = type==='reminder' ? '⚠️ إرسال تذكير' : '📄 إرسال فاتورة';
+  return `<div class="pay-card" style="margin-bottom:10px;">
+    <div class="pay-card-top">
+      <div class="pay-av">${ini(s.name)}</div>
+      <div class="pay-info">
+        <div class="pay-name">${s.name}</div>
+        <div class="pay-phone">${s.phone}</div>
+      </div>
+      <span style="font-size:13px;font-weight:800;color:${color};">${label}</span>
+    </div>
+    <div style="padding:0 14px 12px;">
+      <button class="btn-main" style="padding:10px;${btnColor}" onclick="sendOne('${s.id}','${type}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        ${btnTxt}
+      </button>
+    </div>
+  </div>`;
+}
+
+// ── SMS SEND WITH EDIT ──
+let smsQueue=[]; // {phone,name,msg}
+function sendOne(id, type='normal') {
+  const s=subs.find(x=>x.id===id); if(!s) return;
+  const msg = type==='reminder' ? buildReminderMsg(s) : buildNormalMsg(s);
+  smsQueue=[{phone:s.phone,name:s.name,msg}];
+  document.getElementById('sms-edit-target').textContent='👤 '+s.name;
+  document.getElementById('sms-edit-text').value=msg;
+  document.getElementById('sms-send-btn-txt').textContent='إرسال';
+  document.getElementById('mSms').classList.add('on');
+}
+
+function sendAll(type='normal') {
+  const list = type==='reminder' ? subs.filter(s=>subOwed(s)>0) : subs;
+  if(!list.length){toast('لا يوجد مشتركون!');return;}
+  smsQueue=list.map(s=>({phone:s.phone,name:s.name,msg:type==='reminder'?buildReminderMsg(s):buildNormalMsg(s)}));
+  document.getElementById('sms-edit-target').textContent=`📨 ${list.length} مشترك — يمكنك تعديل صيغة الرسالة (سيُستخدم النص نفسه للجميع، مع استبدال الاسم تلقائياً)`;
+  document.getElementById('sms-edit-text').value=smsQueue[0].msg;
+  document.getElementById('sms-send-btn-txt').textContent=`إرسال للجميع (${list.length})`;
+  document.getElementById('mSms').classList.add('on');
+}
+
+function confirmSend(){
+  const edited=document.getElementById('sms-edit-text').value;
+  if(!smsQueue.length)return;
+  if(smsQueue.length===1){
+    window.open(`sms:${smsQueue[0].phone.replace(/\D/g,'')}?body=${encodeURIComponent(edited)}`,'_blank');
+    toast(`📱 تم فتح رسالة لـ ${smsQueue[0].name}`);
+  } else {
+    // detect if original first message contained the name, to allow per-subscriber name substitution
+    const original=smsQueue[0].msg;
+    const namePattern=smsQueue[0].name;
+    smsQueue.forEach(item=>{
+      let msg=edited;
+      if(original.includes(namePattern)){
+        msg=edited.split(namePattern).join(item.name);
+      }
+      window.open(`sms:${item.phone.replace(/\D/g,'')}?body=${encodeURIComponent(msg)}`,'_blank');
+    });
+    toast(`✅ تم فتح ${smsQueue.length} رسائل`);
+  }
+  cm('mSms');
+}
+
+// ── HELPERS ──
+function cm(id){document.getElementById(id).classList.remove('on');}
+document.getElementById('mEdit').addEventListener('click',function(e){if(e.target===this)cm('mEdit');});
+document.getElementById('mInv').addEventListener('click',function(e){if(e.target===this)cm('mInv');});
+document.getElementById('mSms').addEventListener('click',function(e){if(e.target===this)cm('mSms');});
+document.getElementById('mWeek').addEventListener('click',function(e){if(e.target===this)cm('mWeek');});
+function setPM(m){
+  pmMode=m;
+  document.getElementById('pmG').classList.toggle('on',m==='global');
+  document.getElementById('pmC').classList.toggle('on',m==='custom');
+  document.getElementById('pmCRow').style.display=m==='custom'?'block':'none';
+  document.getElementById('pmGNote').style.display=m==='global'?'block':'none';
+}
+function saveGP(){
+  const v=parseFloat(document.getElementById('gPrice').value);
+  if(!isNaN(v)&&v>0){gp=v;save();renderAll();toast('✅ تم حفظ السعر');}
+}
+
+function renderAll(){renderDash();renderSubs();renderPay();renderSMS();}
+
+function sw(tab){
+  ['dash','subs','pay','add','sms'].forEach(t=>{
+    document.getElementById('scr-'+t).classList.remove('on');
+    document.getElementById('tab-'+t).classList.remove('on');
+  });
+  document.getElementById('scr-'+tab).classList.add('on');
+  document.getElementById('tab-'+tab).classList.add('on');
+  if(tab==='dash')renderDash();
+  else if(tab==='subs')renderSubs();
+  else if(tab==='pay')renderPay();
+  else if(tab==='sms')renderSMS();
+}
+
+// ── PDF EXPORT ──
+function allWeeks(){
+  const set=new Set();
+  subs.forEach(s=>(s.invoices||[]).forEach(i=>set.add(i.week)));
+  return [...set];
+}
+function exportPDF(mode){
+  if(mode==='week'){
+    const weeks=allWeeks();
+    if(!weeks.length){toast('⚠️ لا توجد فواتير بعد');return;}
+    const sel=document.getElementById('exp-week-sel');
+    sel.innerHTML=weeks.map(w=>`<option value="${w}">${w}</option>`).join('');
+    document.getElementById('mWeek').classList.add('on');
+    return;
+  }
+  buildAndExport(mode);
+}
+function doExportWeek(){
+  const w=document.getElementById('exp-week-sel').value;
+  cm('mWeek');
+  buildAndExport('week',w);
+}
+function buildAndExport(mode,week){
+  let rows=[],title='',totalAmt=0,totalCons=0;
+  if(mode==='all'){
+    title='قائمة جميع المشتركين';
+    subs.forEach(s=>{
+      const owed=subOwed(s),tot=subTotalAmt(s);
+      totalAmt+=tot;
+      rows.push({name:s.name,phone:s.phone,extra:`الإجمالي: ${tot.toFixed(2)} ₪ | المستحق: ${owed.toFixed(2)} ₪`,status:owed>0?'غير مسدد':'مسدد'});
+    });
+  } else if(mode==='due'){
+    title='المشتركون غير المسددين';
+    subs.filter(s=>subOwed(s)>0).forEach(s=>{
+      const owed=subOwed(s);totalAmt+=owed;
+      rows.push({name:s.name,phone:s.phone,extra:`المستحق: ${owed.toFixed(2)} ₪`,status:'غير مسدد'});
+    });
+  } else if(mode==='paid'){
+    title='المشتركون المسددون';
+    subs.filter(s=>subOwed(s)===0&&(s.invoices||[]).length>0).forEach(s=>{
+      const tot=subTotalAmt(s);totalAmt+=tot;
+      rows.push({name:s.name,phone:s.phone,extra:`المدفوع: ${tot.toFixed(2)} ₪`,status:'مسدد'});
+    });
+  } else if(mode==='week'){
+    title=`فواتير ${week}`;
+    subs.forEach(s=>{
+      const inv=(s.invoices||[]).find(i=>i.week===week);
+      if(!inv)return;
+      const ib=calcInv(inv,price(s));
+      totalAmt+=ib.amt;totalCons+=ib.cons;
+      rows.push({name:s.name,phone:s.phone,extra:`القراءة: ${inv.prevReading} ← ${inv.currReading} | ${ib.cons} ك.و.س | ${ib.amt} ₪`,status:inv.paid?'مسدد':'غير مسدد'});
+    });
+  }
+  if(!rows.length){toast('⚠️ لا توجد بيانات لهذا التصدير');return;}
+
+  const dateStr=new Date().toLocaleDateString('ar-PS',{day:'numeric',month:'long',year:'numeric'});
+  const html=`
+    <div style="text-align:center;border-bottom:3px solid #1a3a5c;padding-bottom:14px;margin-bottom:18px;">
+      <div style="font-size:22px;font-weight:800;color:#1a3a5c;">⚡ اشتراكات الكهرباء</div>
+      <div style="font-size:16px;font-weight:700;color:#5a6a7e;margin-top:6px;">${title}</div>
+      <div style="font-size:12px;color:#8fa0b4;margin-top:4px;">${dateStr}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:#1a3a5c;color:#fff;">
+        <th style="padding:10px;text-align:right;">#</th>
+        <th style="padding:10px;text-align:right;">الاسم</th>
+        <th style="padding:10px;text-align:right;">الجوال</th>
+        <th style="padding:10px;text-align:right;">التفاصيل</th>
+        <th style="padding:10px;text-align:right;">الحالة</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r,i)=>`<tr style="border-bottom:1px solid #e4ecf4;background:${i%2?'#f0f4f8':'#fff'};">
+          <td style="padding:9px;">${i+1}</td>
+          <td style="padding:9px;font-weight:700;">${r.name}</td>
+          <td style="padding:9px;direction:ltr;text-align:right;">${r.phone}</td>
+          <td style="padding:9px;">${r.extra}</td>
+          <td style="padding:9px;font-weight:700;color:${r.status==='مسدد'?'#00b894':'#e17055'};">${r.status}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:18px;padding:14px;background:#f0f4f8;border-radius:10px;font-size:14px;font-weight:700;color:#1a3a5c;">
+      عدد المشتركين: ${rows.length}${totalCons?` | إجمالي الاستهلاك: ${totalCons.toFixed(0)} ك.و.س`:''} | الإجمالي: ${totalAmt.toFixed(2)} ₪
+    </div>`;
+
+  const container=document.getElementById('pdf-render');
+  container.innerHTML=html;
+  toast('⏳ جاري إنشاء الملف...');
+  setTimeout(()=>{
+    html2canvas(container,{scale:2}).then(canvas=>{
+      const imgData=canvas.toDataURL('image/png');
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF('p','mm','a4');
+      const pageW=210, pageH=297;
+      const imgW=pageW, imgH=canvas.height*imgW/canvas.width;
+      let heightLeft=imgH, pos=0;
+      pdf.addImage(imgData,'PNG',0,pos,imgW,imgH);
+      heightLeft-=pageH;
+      while(heightLeft>0){
+        pos=heightLeft-imgH;
+        pdf.addPage();
+        pdf.addImage(imgData,'PNG',0,pos,imgW,imgH);
+        heightLeft-=pageH;
+      }
+      pdf.save(`${title.replace(/\s+/g,'_')}.pdf`);
+      toast('✅ تم تصدير الملف');
+    }).catch(e=>{toast('⚠️ خطأ في التصدير');console.error(e);});
+  },100);
+}
+
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('✅ SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+
+// set default week label for add form
+const _n=new Date();
+const _wk=Math.ceil(_n.getDate()/7);
+document.getElementById('f-week').value=`الأسبوع ${_wk} — ${_n.toLocaleDateString('ar-PS',{month:'long',year:'numeric'})}`;
+
+updHeader();renderDash();
+</script>
+</body>
+</html>
