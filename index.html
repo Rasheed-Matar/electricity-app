@@ -597,7 +597,7 @@ function toast(m,d=2500){const t=document.getElementById('toast');t.textContent=
 
 // ── PRICES & CALCS ──
 function price(s){return(s.customPrice&&s.customPrice>0)?s.customPrice:gp;}
-function calcInv(inv,p){const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));return{cons:c,amt:parseFloat((c*p).toFixed(2))};}
+function calcInv(inv,p){const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));const cR=Math.round(c*100)/100;return{cons:cR,amt:Math.ceil(cR*p)};}
 function subOwed(s){return(s.invoices||[]).filter(i=>!i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
 function subPaidAmt(s){return(s.invoices||[]).filter(i=>i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
 function subTotalAmt(s){return(s.invoices||[]).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
@@ -662,7 +662,7 @@ function buildSC(s,showSMS=true){
     strip=`<div class="sc-strip">
       <div class="sc-cell"><div class="sc-cl">سابقة</div><div class="sc-cv">${last.prevReading}</div></div>
       <div class="sc-cell"><div class="sc-cl">حالية</div><div class="sc-cv">${last.currReading}</div></div>
-      <div class="sc-cell"><div class="sc-cl">استهلاك</div><div class="sc-cv gold">${lb.cons} ك</div></div>
+      <div class="sc-cell"><div class="sc-cl">استهلاك</div><div class="sc-cv gold">${lb.cons.toFixed(2)} ك</div></div>
     </div>
     <div class="sc-total">
       <span class="sc-total-lbl">آخر فاتورة — ${last.week}</span>
@@ -698,7 +698,7 @@ function buildSC(s,showSMS=true){
         return `<div class="inv-row">
           <div>
             <div class="inv-week">${inv.week}</div>
-            <div class="inv-read">${inv.prevReading} ← ${inv.currReading} | ${ib.cons} ك.و.س</div>
+            <div class="inv-read">${inv.prevReading} ← ${inv.currReading} | ${ib.cons.toFixed(2)} ك.و.س</div>
           </div>
           <span class="inv-amt ${inv.paid?'paid':'due'}">${ib.amt} ₪</span>
           ${!inv.paid?`<button class="ipay-btn" onclick="payInv('${s.id}',${ii})">دفع ✓</button>`:`<span style="font-size:11px;color:var(--green);font-weight:700;">✓ مدفوع</span>`}
@@ -808,7 +808,7 @@ function renderPay(){
           const ib=calcInv(inv,p);
           return `<div class="pi-row">
             <span class="pi-week">${inv.week}</span>
-            <span style="font-size:11px;color:var(--text2);">${ib.cons} ك.و.س</span>
+            <span style="font-size:11px;color:var(--text2);">${ib.cons.toFixed(2)} ك.و.س</span>
             <span class="pi-amt">${ib.amt} ₪</span>
             <button class="pi-pay-btn" onclick="payInv('${s.id}',${ii})">دفع ✓</button>
           </div>`;
@@ -820,7 +820,7 @@ function renderPay(){
           const ib=calcInv(inv,p);
           return `<div class="pi-row">
             <span class="pi-week">${inv.week}</span>
-            <span style="font-size:11px;color:var(--text2);">${ib.cons} ك.و.س</span>
+            <span style="font-size:11px;color:var(--text2);">${ib.cons.toFixed(2)} ك.و.س</span>
             <span class="pi-amt" style="color:var(--green);">${ib.amt} ₪</span>
             <span class="pi-paid-lbl">✓ مدفوع</span>
           </div>`;
@@ -1023,7 +1023,7 @@ function buildNormalMsg(s) {
     name:s.name,
     prev:last.prevReading,
     curr:last.currReading,
-    cons:lb.cons,
+    cons:lb.cons.toFixed(2),
     week:last.week,
     owed:owed.toFixed(2),
     accumulated:accumulated.toFixed(2),
@@ -1045,7 +1045,7 @@ function buildReminderMsg(s) {
     unpaidWeeks:unpaidWeeks,
     prev:last?last.prevReading:'',
     curr:last?last.currReading:'',
-    cons:last?calcInv(last,price(s)).cons:'',
+    cons:last?calcInv(last,price(s)).cons.toFixed(2):'',
     week:last?last.week:''
   });
 }
@@ -1257,7 +1257,7 @@ function buildAndExport(mode,week){
       if(!inv)return;
       const ib=calcInv(inv,price(s));
       totalAmt+=ib.amt;totalCons+=ib.cons;
-      rows.push({name:s.name,phone:s.phone,extra:`القراءة: ${inv.prevReading} ← ${inv.currReading} | ${ib.cons} ك.و.س | ${ib.amt} ₪`,status:inv.paid?'مسدد':'غير مسدد'});
+      rows.push({name:s.name,phone:s.phone,extra:`القراءة: ${inv.prevReading} ← ${inv.currReading} | ${ib.cons.toFixed(2)} ك.و.س | ${ib.amt} ₪`,status:inv.paid?'مسدد':'غير مسدد'});
     });
   }
   if(!rows.length){toast('⚠️ لا توجد بيانات لهذا التصدير');return;}
