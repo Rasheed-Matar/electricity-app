@@ -2,6 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a3a5c">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -606,7 +609,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="mhandle"></div>
     <div class="mtitle">📄 معاينة الملف</div>
     <div id="pdf-preview-name" style="font-size:12px;color:var(--text2);margin-bottom:8px;word-break:break-all;"></div>
-    <iframe id="pdf-preview-frame" style="flex:1;width:100%;border:1.5px solid var(--border);border-radius:10px;min-height:50vh;"></iframe>
+    <div id="pdf-preview-frame" style="flex:1;width:100%;border:1.5px solid var(--border);border-radius:10px;min-height:50vh;overflow:auto;background:#525659;padding:8px;"></div>
     <button class="btn-main" onclick="downloadCurrentPdf()" style="margin-top:10px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       تنزيل الملف
@@ -1425,15 +1428,15 @@ function buildAndExport(mode,week){
       }
       const blobUrl=pdf.output('bloburl');
       const fname=`${title.replace(/\s+/g,'_')}.pdf`;
-      showPdfPreview(blobUrl,fname);
+      showPdfPreview(blobUrl,fname,imgData);
     }).catch(e=>{toast('⚠️ خطأ في التصدير');console.error(e);});
   },100);
 }
 
 let currentPdfBlobUrl=null, currentPdfFname=null;
-function showPdfPreview(blobUrl,fname){
+function showPdfPreview(blobUrl,fname,imgData){
   currentPdfBlobUrl=blobUrl;currentPdfFname=fname;
-  document.getElementById('pdf-preview-frame').src=blobUrl;
+  document.getElementById('pdf-preview-frame').innerHTML=`<img src="${imgData}" style="width:100%;display:block;border-radius:8px;">`;
   document.getElementById('pdf-preview-name').textContent=fname;
   document.getElementById('mPdfPreview').classList.add('on');
   toast('✅ الملف جاهز للمعاينة');
@@ -1450,15 +1453,34 @@ function downloadCurrentPdf(){
 
 
 
-// ── إزالة Service Worker القديم نهائياً (لمنع تخزين نسخ قديمة من التطبيق) ──
+// ── إصدار التطبيق ──
+const APP_VERSION = '2026-06-13-3';
+try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
+
+// ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // فحص دوري عن نسخة جديدة كل دقيقة
+      setInterval(() => reg.update(), 60*1000);
+
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            nw.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    }).catch(e => console.log('SW error:', e));
   });
-  // حذف أي كاش قديم مخزن من النسخ السابقة
-  if (window.caches) {
-    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-  }
+
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshed) return;
+    refreshed = true;
+    window.location.reload();
+  });
 }
 
 // set default date for add form
