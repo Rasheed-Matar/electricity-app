@@ -1,10 +1,9 @@
-const CACHE = 'elec-v2';
+const CACHE = 'elec-v3';
 const FILES = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg',
-  'https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap'
+  './icon.svg'
 ];
 
 self.addEventListener('install', e => {
@@ -21,24 +20,11 @@ self.addEventListener('activate', e => {
   );
 });
 
+// شبكة أولاً مع تحديث الكاش في الخلفية، والكاش فقط عند انقطاع الإنترنت
 self.addEventListener('fetch', e => {
   const req = e.request;
+  if (req.method !== 'GET') return;
 
-  // للصفحة الرئيسية والملفات الأساسية: شبكة أولاً (Network First) لضمان التحديث الفوري
-  if (req.mode === 'navigate' || req.url.includes('index.html') || req.url.endsWith('/')) {
-    e.respondWith(
-      fetch(req)
-        .then(res => {
-          const resClone = res.clone();
-          caches.open(CACHE).then(c => c.put(req, resClone));
-          return res;
-        })
-        .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
-    );
-    return;
-  }
-
-  // باقي الملفات: شبكة أولاً مع نسخة احتياطية من الكاش (يدعم العمل دون اتصال)
   e.respondWith(
     fetch(req)
       .then(res => {
@@ -46,11 +32,10 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(c => c.put(req, resClone));
         return res;
       })
-      .catch(() => caches.match(req))
+      .catch(() => caches.match(req).then(cached => cached || (req.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });
 
-// السماح بإجبار التحديث الفوري من الصفحة عند الحاجة
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
