@@ -1454,8 +1454,29 @@ function downloadCurrentPdf(){
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('✅ SW registered'))
+      .then(reg => {
+        console.log('✅ SW registered');
+        // فحص دوري عن نسخة جديدة
+        setInterval(() => reg.update(), 60*1000);
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // يوجد نسخة جديدة جاهزة — فعّلها وأعد تحميل الصفحة تلقائياً
+              newWorker.postMessage('SKIP_WAITING');
+            }
+          });
+        });
+      })
       .catch(e => console.log('SW error:', e));
+  });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
   });
 }
 
