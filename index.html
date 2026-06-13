@@ -1450,34 +1450,15 @@ function downloadCurrentPdf(){
 
 
 
-// ── SERVICE WORKER ──
+// ── إزالة Service Worker القديم نهائياً (لمنع تخزين نسخ قديمة من التطبيق) ──
 if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => {
-        console.log('✅ SW registered');
-        // فحص دوري عن نسخة جديدة
-        setInterval(() => reg.update(), 60*1000);
-
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // يوجد نسخة جديدة جاهزة — فعّلها وأعد تحميل الصفحة تلقائياً
-              newWorker.postMessage('SKIP_WAITING');
-            }
-          });
-        });
-      })
-      .catch(e => console.log('SW error:', e));
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
   });
-
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
+  // حذف أي كاش قديم مخزن من النسخ السابقة
+  if (window.caches) {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  }
 }
 
 // set default date for add form
