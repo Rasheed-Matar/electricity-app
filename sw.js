@@ -1,4 +1,4 @@
-const CACHE = 'elec-v1';
+const CACHE = 'elec-v2';
 const FILES = [
   './',
   './index.html',
@@ -22,7 +22,35 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const req = e.request;
+
+  // للصفحة الرئيسية والملفات الأساسية: شبكة أولاً (Network First) لضمان التحديث الفوري
+  if (req.mode === 'navigate' || req.url.includes('index.html') || req.url.endsWith('/')) {
+    e.respondWith(
+      fetch(req)
+        .then(res => {
+          const resClone = res.clone();
+          caches.open(CACHE).then(c => c.put(req, resClone));
+          return res;
+        })
+        .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // باقي الملفات: شبكة أولاً مع نسخة احتياطية من الكاش (يدعم العمل دون اتصال)
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('./index.html')))
+    fetch(req)
+      .then(res => {
+        const resClone = res.clone();
+        caches.open(CACHE).then(c => c.put(req, resClone));
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
+});
+
+// السماح بإجبار التحديث الفوري من الصفحة عند الحاجة
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
