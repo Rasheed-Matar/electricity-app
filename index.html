@@ -404,7 +404,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
   </div>
   <div class="fsec">
     <div class="fsec-title">الفاتورة الأولى</div>
-    <div class="fg"><label class="fl">الأسبوع / الفترة</label><input type="text" class="fc" id="f-week" placeholder="مثال: الأسبوع 1 — يونيو 2026"></div>
+    <div class="fg"><label class="fl">تاريخ الفاتورة (مرجع الأسبوع)</label><input type="date" class="fc" id="f-week-date"></div>
     <div class="frow">
       <div class="fg"><label class="fl">القراءة السابقة</label><input type="number" class="fc" id="f-prev" placeholder="0" min="0"></div>
       <div class="fg"><label class="fl">القراءة الحالية</label><input type="number" class="fc" id="f-curr" placeholder="0" min="0"></div>
@@ -516,7 +516,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="mhandle"></div>
     <div class="mtitle">➕ فاتورة أسبوعية جديدة</div>
     <div id="mInv-subname" style="font-size:13px;color:var(--text2);background:var(--bg);padding:8px 12px;border-radius:10px;margin-bottom:14px;"></div>
-    <div class="fg"><label class="fl">الأسبوع / الفترة</label><input type="text" class="fc" id="inv-week" placeholder="مثال: الأسبوع 2 — يونيو 2026"></div>
+    <div class="fg"><label class="fl">تاريخ الفاتورة (مرجع الأسبوع)</label><input type="date" class="fc" id="inv-week-date"></div>
     <div class="frow">
       <div class="fg"><label class="fl">القراءة السابقة</label><input type="number" class="fc" id="inv-prev" placeholder="0" min="0" oninput="updInvCalc()"></div>
       <div class="fg"><label class="fl">القراءة الحالية</label><input type="number" class="fc" id="inv-curr" placeholder="0" min="0" oninput="updInvCalc()"></div>
@@ -583,6 +583,38 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
   </div>
 </div>
 
+<!-- ══ MODAL: REGISTER PAYMENT ══ -->
+<div class="mback" id="mPay">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle">💵 تسجيل دفعة</div>
+    <div id="pay-subname" style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px;"></div>
+    <div id="pay-owed-info" style="font-size:12px;color:var(--text2);background:var(--bg);padding:8px 12px;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="fg"><label class="fl">المبلغ المدفوع (₪)</label><input type="number" class="fc" id="pay-amount" step="0.01" min="0" placeholder="0.00"></div>
+    <button class="btn-sec" style="margin-top:0;" onclick="setFullPayment()">💰 سداد كامل المبلغ المستحق</button>
+    <button class="btn-main" onclick="confirmPayment()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      تأكيد الدفع
+    </button>
+    <button class="btn-sec" onclick="cm('mPay')">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: PDF PREVIEW ══ -->
+<div class="mback" id="mPdfPreview">
+  <div class="msheet" style="height:88vh;display:flex;flex-direction:column;">
+    <div class="mhandle"></div>
+    <div class="mtitle">📄 معاينة الملف</div>
+    <div id="pdf-preview-name" style="font-size:12px;color:var(--text2);margin-bottom:8px;word-break:break-all;"></div>
+    <iframe id="pdf-preview-frame" style="flex:1;width:100%;border:1.5px solid var(--border);border-radius:10px;min-height:50vh;"></iframe>
+    <button class="btn-main" onclick="downloadCurrentPdf()" style="margin-top:10px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      تنزيل الملف
+    </button>
+    <button class="btn-sec" onclick="cm('mPdfPreview')">إغلاق</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -598,8 +630,9 @@ function toast(m,d=2500){const t=document.getElementById('toast');t.textContent=
 // ── PRICES & CALCS ──
 function price(s){return(s.customPrice&&s.customPrice>0)?s.customPrice:gp;}
 function calcInv(inv,p){const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));const cR=Math.round(c*100)/100;return{cons:cR,amt:Math.ceil(cR*p)};}
-function subOwed(s){return(s.invoices||[]).filter(i=>!i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
-function subPaidAmt(s){return(s.invoices||[]).filter(i=>i.paid).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
+function invPaidAmt(inv,p){const amt=calcInv(inv,p).amt;if(inv.paid)return amt;return Math.min(inv.paidAmount||0,amt);}
+function subOwed(s){const p=price(s);return(s.invoices||[]).reduce((a,i)=>{const amt=calcInv(i,p).amt;return a+(amt-invPaidAmt(i,p));},0);}
+function subPaidAmt(s){const p=price(s);return(s.invoices||[]).reduce((a,i)=>a+invPaidAmt(i,p),0);}
 function subTotalAmt(s){return(s.invoices||[]).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
 
 // ── HEADER & DASHBOARD ──
@@ -801,6 +834,11 @@ function renderPay(){
         </div>
         <div class="pay-owed">${owed>0?owed.toFixed(2)+' ₪':'✅'}</div>
       </div>
+      ${owed>0?`<div style="padding:0 14px 12px;">
+        <button class="btn-main" style="margin:0;padding:9px;font-size:12px;" onclick="openPayment('${s.id}')">
+          💵 تسجيل دفعة
+        </button>
+      </div>`:''}
       ${unpaidInvs.length?`<div class="pay-invoices">
         <div style="padding:7px 14px;font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);">⏳ فواتير معلقة</div>
         ${unpaidInvs.map((inv,i)=>{
@@ -809,7 +847,8 @@ function renderPay(){
           return `<div class="pi-row">
             <span class="pi-week">${inv.week}</span>
             <span style="font-size:11px;color:var(--text2);">${ib.cons.toFixed(2)} ك.و.س</span>
-            <span class="pi-amt">${ib.amt} ₪</span>
+            ${inv.paidAmount>0?`<span style="font-size:10px;color:var(--green);">دُفع ${inv.paidAmount.toFixed(2)}</span>`:''}
+            <span class="pi-amt">${(ib.amt-(inv.paidAmount||0)).toFixed(2)} ₪</span>
             <button class="pi-pay-btn" onclick="payInv('${s.id}',${ii})">دفع ✓</button>
           </div>`;
         }).join('')}
@@ -830,10 +869,53 @@ function renderPay(){
   }).join('');
 }
 
-// ── INVOICES ──
+// ── REGISTER PAYMENT (full/partial) ──
+let paySubId=null;
+function openPayment(id){
+  const s=subs.find(x=>x.id===id);if(!s)return;
+  paySubId=id;
+  const owed=subOwed(s);
+  document.getElementById('pay-subname').textContent='👤 '+s.name;
+  document.getElementById('pay-owed-info').textContent=`المبلغ المستحق حالياً: ${owed.toFixed(2)} ₪`;
+  document.getElementById('pay-amount').value='';
+  document.getElementById('mPay').classList.add('on');
+}
+function setFullPayment(){
+  const s=subs.find(x=>x.id===paySubId);if(!s)return;
+  document.getElementById('pay-amount').value=subOwed(s).toFixed(2);
+}
+function confirmPayment(){
+  const s=subs.find(x=>x.id===paySubId);if(!s)return;
+  let amount=parseFloat(document.getElementById('pay-amount').value||'0');
+  if(amount<=0){toast('⚠️ أدخل مبلغاً صحيحاً');return;}
+  applyPayment(s,amount);
+  save();cm('mPay');renderAll();toast('✅ تم تسجيل الدفعة');
+}
+// يوزع المبلغ المدفوع على الفواتير المعلقة (الأقدم أولاً)
+function applyPayment(s,amount){
+  const p=price(s);
+  const unpaid=(s.invoices||[]).filter(i=>!i.paid);
+  let remaining=amount;
+  for(const inv of unpaid){
+    if(remaining<=0)break;
+    const amt=calcInv(inv,p).amt;
+    const already=inv.paidAmount||0;
+    const due=amt-already;
+    if(remaining>=due){
+      inv.paidAmount=amt;
+      inv.paid=true;
+      remaining-=due;
+    } else {
+      inv.paidAmount=already+remaining;
+      remaining=0;
+    }
+  }
+}
+
 function payInv(subId,ii){
   const s=subs.find(x=>x.id===subId);if(!s)return;
   s.invoices[ii].paid=true;
+  s.invoices[ii].paidAmount=calcInv(s.invoices[ii],price(s)).amt;
   save();renderAll();toast('✅ تم تسجيل الدفع');
 }
 function delInv(subId,ii){
@@ -841,6 +923,18 @@ function delInv(subId,ii){
   if(!s||!confirm('حذف هذه الفاتورة؟'))return;
   s.invoices.splice(ii,1);save();renderAll();toast('🗑️ تم الحذف');
 }
+// تحويل تاريخ إلى نص "الأسبوع X — شهر سنة" حسب يوم الشهر
+function weekLabelFromDate(dateStr){
+  const d=dateStr?new Date(dateStr+'T00:00:00'):new Date();
+  const wk=Math.ceil(d.getDate()/7);
+  const dayStr=d.toLocaleDateString('ar-PS',{day:'numeric',month:'long',year:'numeric'});
+  return `الأسبوع ${wk} — ${dayStr}`;
+}
+function todayISO(){
+  const n=new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+
 function openInv(id){
   const s=subs.find(x=>x.id===id);if(!s)return;
   invSubId=id;
@@ -849,10 +943,7 @@ function openInv(id){
   document.getElementById('inv-prev').value=last?last.currReading:'';
   document.getElementById('inv-curr').value='';
   document.getElementById('inv-calc').textContent='0 ₪';
-  // default week label
-  const n=new Date();
-  const wk=Math.ceil(n.getDate()/7);
-  document.getElementById('inv-week').value=`الأسبوع ${wk} — ${n.toLocaleDateString('ar-PS',{month:'long',year:'numeric'})}`;
+  document.getElementById('inv-week-date').value=todayISO();
   document.getElementById('mInv').classList.add('on');
 }
 function updInvCalc(){
@@ -864,13 +955,14 @@ function updInvCalc(){
   document.getElementById('inv-calc').textContent=(cons*price(s)).toFixed(2)+' ₪';
 }
 function saveInv(){
-  const week=document.getElementById('inv-week').value.trim();
+  const dateVal=document.getElementById('inv-week-date').value;
   const prev=parseFloat(document.getElementById('inv-prev').value||'0');
   const curr=parseFloat(document.getElementById('inv-curr').value||'0');
-  if(!week){toast('⚠️ أدخل اسم الأسبوع');return;}
+  if(!dateVal){toast('⚠️ اختر تاريخ الفاتورة');return;}
   if(curr<prev){toast('⚠️ القراءة الحالية أقل من السابقة');return;}
   const s=subs.find(x=>x.id===invSubId);if(!s)return;
   if(!s.invoices)s.invoices=[];
+  const week=weekLabelFromDate(dateVal);
   s.invoices.push({id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false});
   save();cm('mInv');renderAll();toast(`✅ تمت إضافة الفاتورة لـ ${s.name}`);
 }
@@ -879,19 +971,21 @@ function saveInv(){
 function addSub(){
   const name=document.getElementById('f-name').value.trim();
   const phone=document.getElementById('f-phone').value.trim();
-  const week=document.getElementById('f-week').value.trim();
+  const dateVal=document.getElementById('f-week-date').value;
   const prev=parseFloat(document.getElementById('f-prev').value||'0');
   const curr=parseFloat(document.getElementById('f-curr').value||'0');
   if(!name){toast('⚠️ أدخل الاسم');return;}
   if(!phone){toast('⚠️ أدخل الجوال');return;}
-  if(!week){toast('⚠️ أدخل اسم الأسبوع');return;}
+  if(!dateVal){toast('⚠️ اختر تاريخ الفاتورة');return;}
   if(curr<prev){toast('⚠️ القراءة الحالية أقل من السابقة');return;}
   let cp=null;
   if(pmMode==='custom'){const v=parseFloat(document.getElementById('f-cprice').value);if(!isNaN(v)&&v>0)cp=v;}
+  const week=weekLabelFromDate(dateVal);
   const inv={id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false};
   subs.push({id:Date.now().toString(),name,phone,customPrice:cp,invoices:[inv]});
   save();
-  ['f-name','f-phone','f-week','f-prev','f-curr','f-cprice'].forEach(i=>document.getElementById(i).value='');
+  ['f-name','f-phone','f-prev','f-curr','f-cprice'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-week-date').value=todayISO();
   updAddCalc();
   toast(`✅ تمت إضافة ${name}`);sw('subs');
 }
@@ -1180,6 +1274,8 @@ document.getElementById('mInv').addEventListener('click',function(e){if(e.target
 document.getElementById('mSms').addEventListener('click',function(e){if(e.target===this)cm('mSms');});
 document.getElementById('mWeek').addEventListener('click',function(e){if(e.target===this)cm('mWeek');});
 document.getElementById('mTpl').addEventListener('click',function(e){if(e.target===this)cm('mTpl');});
+document.getElementById('mPay').addEventListener('click',function(e){if(e.target===this)cm('mPay');});
+document.getElementById('mPdfPreview').addEventListener('click',function(e){if(e.target===this)cm('mPdfPreview');});
 function setPM(m){
   pmMode=m;
   document.getElementById('pmG').classList.toggle('on',m==='global');
@@ -1235,20 +1331,31 @@ function buildAndExport(mode,week){
     title='قائمة جميع المشتركين';
     subs.forEach(s=>{
       const owed=subOwed(s),tot=subTotalAmt(s);
-      totalAmt+=tot;
-      rows.push({name:s.name,phone:s.phone,extra:`الإجمالي: ${tot.toFixed(2)} ₪ | المستحق: ${owed.toFixed(2)} ₪`,status:owed>0?'غير مسدد':'مسدد'});
+      const invs=s.invoices||[];
+      const last=invs.length?invs[invs.length-1]:null;
+      const lb=last?calcInv(last,price(s)):null;
+      totalAmt+=tot;if(lb)totalCons+=lb.cons;
+      rows.push({name:s.name,phone:s.phone,prev:last?last.prevReading:'-',curr:last?last.currReading:'-',cons:lb?lb.cons.toFixed(2):'-',amt:tot.toFixed(2),status:owed>0?'غير مسدد':'مسدد'});
     });
   } else if(mode==='due'){
     title='المشتركون غير المسددين';
     subs.filter(s=>subOwed(s)>0).forEach(s=>{
-      const owed=subOwed(s);totalAmt+=owed;
-      rows.push({name:s.name,phone:s.phone,extra:`المستحق: ${owed.toFixed(2)} ₪`,status:'غير مسدد'});
+      const owed=subOwed(s);
+      const invs=s.invoices||[];
+      const last=invs.length?invs[invs.length-1]:null;
+      const lb=last?calcInv(last,price(s)):null;
+      totalAmt+=owed;if(lb)totalCons+=lb.cons;
+      rows.push({name:s.name,phone:s.phone,prev:last?last.prevReading:'-',curr:last?last.currReading:'-',cons:lb?lb.cons.toFixed(2):'-',amt:owed.toFixed(2),status:'غير مسدد'});
     });
   } else if(mode==='paid'){
     title='المشتركون المسددون';
     subs.filter(s=>subOwed(s)===0&&(s.invoices||[]).length>0).forEach(s=>{
-      const tot=subTotalAmt(s);totalAmt+=tot;
-      rows.push({name:s.name,phone:s.phone,extra:`المدفوع: ${tot.toFixed(2)} ₪`,status:'مسدد'});
+      const tot=subTotalAmt(s);
+      const invs=s.invoices||[];
+      const last=invs[invs.length-1];
+      const lb=calcInv(last,price(s));
+      totalAmt+=tot;totalCons+=lb.cons;
+      rows.push({name:s.name,phone:s.phone,prev:last.prevReading,curr:last.currReading,cons:lb.cons.toFixed(2),amt:tot.toFixed(2),status:'مسدد'});
     });
   } else if(mode==='week'){
     title=`فواتير ${week}`;
@@ -1257,7 +1364,7 @@ function buildAndExport(mode,week){
       if(!inv)return;
       const ib=calcInv(inv,price(s));
       totalAmt+=ib.amt;totalCons+=ib.cons;
-      rows.push({name:s.name,phone:s.phone,extra:`القراءة: ${inv.prevReading} ← ${inv.currReading} | ${ib.cons.toFixed(2)} ك.و.س | ${ib.amt} ₪`,status:inv.paid?'مسدد':'غير مسدد'});
+      rows.push({name:s.name,phone:s.phone,prev:inv.prevReading,curr:inv.currReading,cons:ib.cons.toFixed(2),amt:ib.amt.toFixed(2),status:inv.paid?'مسدد':'غير مسدد'});
     });
   }
   if(!rows.length){toast('⚠️ لا توجد بيانات لهذا التصدير');return;}
@@ -1269,26 +1376,32 @@ function buildAndExport(mode,week){
       <div style="font-size:16px;font-weight:700;color:#5a6a7e;margin-top:6px;">${title}</div>
       <div style="font-size:12px;color:#8fa0b4;margin-top:4px;">${dateStr}</div>
     </div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead><tr style="background:#1a3a5c;color:#fff;">
-        <th style="padding:10px;text-align:right;">#</th>
-        <th style="padding:10px;text-align:right;">الاسم</th>
-        <th style="padding:10px;text-align:right;">الجوال</th>
-        <th style="padding:10px;text-align:right;">التفاصيل</th>
-        <th style="padding:10px;text-align:right;">الحالة</th>
+        <th style="padding:8px 6px;text-align:center;">#</th>
+        <th style="padding:8px 6px;text-align:right;">الاسم</th>
+        <th style="padding:8px 6px;text-align:center;">الجوال</th>
+        <th style="padding:8px 6px;text-align:center;">القراءة السابقة</th>
+        <th style="padding:8px 6px;text-align:center;">القراءة الحالية</th>
+        <th style="padding:8px 6px;text-align:center;">الاستهلاك</th>
+        <th style="padding:8px 6px;text-align:center;">السحب الإجمالي</th>
+        <th style="padding:8px 6px;text-align:center;">الحالة</th>
       </tr></thead>
       <tbody>
         ${rows.map((r,i)=>`<tr style="border-bottom:1px solid #e4ecf4;background:${i%2?'#f0f4f8':'#fff'};">
-          <td style="padding:9px;">${i+1}</td>
-          <td style="padding:9px;font-weight:700;">${r.name}</td>
-          <td style="padding:9px;direction:ltr;text-align:right;">${r.phone}</td>
-          <td style="padding:9px;">${r.extra}</td>
-          <td style="padding:9px;font-weight:700;color:${r.status==='مسدد'?'#00b894':'#e17055'};">${r.status}</td>
+          <td style="padding:7px 6px;text-align:center;">${i+1}</td>
+          <td style="padding:7px 6px;font-weight:700;">${r.name}</td>
+          <td style="padding:7px 6px;direction:ltr;text-align:center;">${r.phone}</td>
+          <td style="padding:7px 6px;text-align:center;">${r.prev}</td>
+          <td style="padding:7px 6px;text-align:center;">${r.curr}</td>
+          <td style="padding:7px 6px;text-align:center;">${r.cons}</td>
+          <td style="padding:7px 6px;text-align:center;font-weight:700;">${r.amt} ₪</td>
+          <td style="padding:7px 6px;text-align:center;font-weight:700;color:${r.status==='مسدد'?'#00b894':'#e17055'};">${r.status}</td>
         </tr>`).join('')}
       </tbody>
     </table>
     <div style="margin-top:18px;padding:14px;background:#f0f4f8;border-radius:10px;font-size:14px;font-weight:700;color:#1a3a5c;">
-      عدد المشتركين: ${rows.length}${totalCons?` | إجمالي الاستهلاك: ${totalCons.toFixed(0)} ك.و.س`:''} | الإجمالي: ${totalAmt.toFixed(2)} ₪
+      عدد المشتركين: ${rows.length}${totalCons?` | إجمالي الاستهلاك: ${totalCons.toFixed(2)} ك.و.س`:''} | الإجمالي: ${totalAmt.toFixed(2)} ₪
     </div>`;
 
   const container=document.getElementById('pdf-render');
@@ -1310,11 +1423,31 @@ function buildAndExport(mode,week){
         pdf.addImage(imgData,'PNG',0,pos,imgW,imgH);
         heightLeft-=pageH;
       }
-      pdf.save(`${title.replace(/\s+/g,'_')}.pdf`);
-      toast('✅ تم تصدير الملف');
+      const blobUrl=pdf.output('bloburl');
+      const fname=`${title.replace(/\s+/g,'_')}.pdf`;
+      showPdfPreview(blobUrl,fname);
     }).catch(e=>{toast('⚠️ خطأ في التصدير');console.error(e);});
   },100);
 }
+
+let currentPdfBlobUrl=null, currentPdfFname=null;
+function showPdfPreview(blobUrl,fname){
+  currentPdfBlobUrl=blobUrl;currentPdfFname=fname;
+  document.getElementById('pdf-preview-frame').src=blobUrl;
+  document.getElementById('pdf-preview-name').textContent=fname;
+  document.getElementById('mPdfPreview').classList.add('on');
+  toast('✅ الملف جاهز للمعاينة');
+}
+function downloadCurrentPdf(){
+  if(!currentPdfBlobUrl)return;
+  const a=document.createElement('a');
+  a.href=currentPdfBlobUrl;
+  a.download=currentPdfFname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 
 
 // ── SERVICE WORKER ──
@@ -1326,10 +1459,8 @@ if('serviceWorker' in navigator){
   });
 }
 
-// set default week label for add form
-const _n=new Date();
-const _wk=Math.ceil(_n.getDate()/7);
-document.getElementById('f-week').value=`الأسبوع ${_wk} — ${_n.toLocaleDateString('ar-PS',{month:'long',year:'numeric'})}`;
+// set default date for add form
+document.getElementById('f-week-date').value=todayISO();
 
 updHeader();renderDash();
 </script>
