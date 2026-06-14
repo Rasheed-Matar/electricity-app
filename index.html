@@ -386,9 +386,15 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="hdr-top">
       <div class="brand">
         <div class="brand-ico">⚡</div>
-        <div><h1>اشتراكات الكهرباء</h1><p>إدارة المشتركين والفواتير</p></div>
+        <div>
+          <h1>اشتراكات الكهرباء</h1>
+          <p id="hdr-welcome">إدارة المشتركين والفواتير</p>
+        </div>
       </div>
-      <div class="hdr-date" id="hdrDate"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="hdr-date" id="hdrDate"></div>
+        <button onclick="doLogout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;">خروج</button>
+      </div>
     </div>
     <div class="big-stats">
       <div class="bstat"><div class="bstat-n" id="bs-total">0</div><div class="bstat-l">مشترك</div></div>
@@ -913,7 +919,18 @@ function checkUserStatus(user){
 // عند الدخول الفعلي للتطبيق
 function enterApp(user,data){
   localStorage.setItem('elec_approved_'+user.uid,'1');
+
+  // توجيه المسؤول تلقائياً بناءً على role في قاعدة البيانات (لا بريد مكتوب في الكود)
+  if(data.role==='admin'){
+    window.location.href='admin.html';
+    return;
+  }
+
   document.getElementById('authScreen').classList.add('hide');
+  // ترحيب باسم المستخدم
+  const welcomeName=data.name||user.email.split('@')[0];
+  document.getElementById('hdr-welcome').textContent='مرحباً '+welcomeName+' 👋';
+
   userDocRef=db.collection('userdata').doc(user.uid);
 
   // مزامنة فورية + استماع مستمر للتغييرات (يدعم العمل بدون انترنت تلقائياً)
@@ -1847,7 +1864,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-13-7';
+const APP_VERSION = '2026-06-14-2';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
