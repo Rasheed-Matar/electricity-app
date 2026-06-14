@@ -39,23 +39,23 @@
 html,body{height:100%;}
 body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
 .app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;overflow:hidden;}
+.app.auth-visible{visibility:hidden;pointer-events:none;}
 
 /* ── شاشات أكبر (تابلت / لابتوب) ── */
 @media (min-width:701px){
-  body{background:linear-gradient(135deg,#dde6ef,#eef3f8);overflow:auto;}
+  body{background:linear-gradient(135deg,#dde6ef,#eef3f8);overflow:hidden;}
   .app{
     max-width:480px;
-    height:94vh;height:94dvh;
-    margin:3vh auto;
-    border-radius:28px;
+    height:100vh;height:100dvh;
+    margin:0 auto;
+    box-shadow:0 0 60px rgba(20,40,70,.15);
     overflow:hidden;
-    box-shadow:0 25px 70px rgba(20,40,70,.18);
-    border:1px solid rgba(255,255,255,.6);
   }
 }
 @media (min-width:1024px){
-  .app{max-width:520px;}
-  .dash-grid{grid-template-columns:repeat(4,1fr);}
+  body{display:flex;align-items:center;justify-content:center;}
+  .app{max-width:500px;height:95vh;height:95dvh;border-radius:28px;border:1px solid rgba(255,255,255,.6);}
+  #authScreen{border-radius:28px;}
 }
 
 /* ── HEADER ── */
@@ -239,11 +239,6 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .mback{position:fixed;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(3px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
 .mback.on{display:flex;}
 .msheet{background:var(--card);border-radius:26px 26px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:430px;max-height:88vh;overflow-y:auto;animation:su .25s ease;}
-@media (min-width:701px){
-  .app{position:relative;}
-  .mback{position:absolute;border-radius:28px;}
-  .msheet{max-width:100%;}
-}
 @keyframes su{from{transform:translateY(100%);}to{transform:translateY(0);}}
 .mhandle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
 .mtitle{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:16px;}
@@ -328,12 +323,15 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 <div id="syncBadge"><span class="dot"></span><span id="syncBadgeTxt">متصل</span></div>
 <div id="authScreen">
   <!-- LOADING — يظهر فوراً على الخلفية الزرقاء -->
-  <div id="auth-loading" class="auth-loading" style="display:flex;position:absolute;inset:0;background:inherit;z-index:10;border-radius:inherit;">
+  <div id="auth-loading" style="display:flex;flex-direction:column;align-items:center;gap:14px;color:#fff;">
     <div class="spinner"></div>
-    <div style="color:rgba(255,255,255,.9);font-size:14px;font-weight:700;">جاري التحميل...</div>
+    <div style="font-size:14px;font-weight:700;opacity:.9;">جاري التحميل...</div>
   </div>
 
-  <div class="auth-box">
+  <div class="auth-box" id="auth-box" style="display:none;">
+
+    <!-- LOGIN -->
+    <div id="auth-login">
       <div class="auth-logo">⚡</div>
       <div class="auth-title">تسجيل الدخول</div>
       <div class="auth-sub">إدارة اشتراكات الكهرباء</div>
@@ -377,7 +375,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
   </div>
 </div>
 
-<div class="app">
+<div class="app auth-visible" id="mainApp">
 
 <!-- HEADER -->
 <div class="hdr">
@@ -820,10 +818,17 @@ window.addEventListener('offline',()=>setSyncBadge(false));
 
 // ══════════ AUTH FLOW ══════════
 function showAuth(which){
-  document.getElementById('auth-loading').style.display = (which==='loading')?'flex':'none';
+  const loading=document.getElementById('auth-loading');
+  const box=document.getElementById('auth-box');
+  if(which==='loading'){
+    loading.style.display='flex';
+    box.style.display='none';
+    return;
+  }
+  loading.style.display='none';
+  box.style.display='block';
   ['auth-login','auth-signup','auth-pending','auth-rejected'].forEach(id=>{
-    const key=id.replace('auth-','');
-    document.getElementById(id).style.display = (key===which)?'block':'none';
+    document.getElementById(id).style.display=(id==='auth-'+which)?'block':'none';
   });
 }
 function authErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add('show');}
@@ -878,6 +883,7 @@ function doLogout(){
   renderAll();
   // إظهار شاشة تسجيل الدخول فوراً قبل انتظار Firebase
   document.getElementById('authScreen').classList.remove('hide');
+  document.getElementById('mainApp').classList.add('auth-visible');
   showAuth('login');
   // ثم تسجيل الخروج من Firebase
   auth.signOut();
@@ -888,7 +894,11 @@ function recheckApproval(){
 }
 
 // عند تغيّر حالة تسجيل الدخول
+// مهلة احتياطية: إذا لم يستجب Firebase خلال 8 ثوانٍ، اعرض شاشة الدخول
+const authTimeout = setTimeout(()=>{ showAuth('login'); }, 8000);
+
 auth.onAuthStateChanged(user=>{
+  clearTimeout(authTimeout);
   currentUser=user;
   if(!user){
     showAuth('login');
@@ -938,6 +948,7 @@ function enterApp(user,data){
   }
 
   document.getElementById('authScreen').classList.add('hide');
+  document.getElementById('mainApp').classList.remove('auth-visible');
 
   // ترحيب باسم المستخدم
   const welcomeName=data.name||user.email.split('@')[0];
@@ -1886,7 +1897,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-5';
+const APP_VERSION = '2026-06-14-6';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
