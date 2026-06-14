@@ -14,11 +14,13 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <title>إدارة اشتراكات الكهرباء</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Firebase أولاً (ضروري للدخول) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- PDF (مؤجل — يُحمّل فقط عند الحاجة) -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
   --navy:#1a3a5c;--navy-dark:#112843;--navy-light:#2a5080;
@@ -325,16 +327,13 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 <!-- ══ AUTH / SYNC GATE ══ -->
 <div id="syncBadge"><span class="dot"></span><span id="syncBadgeTxt">متصل</span></div>
 <div id="authScreen">
+  <!-- LOADING — يظهر فوراً على الخلفية الزرقاء -->
+  <div id="auth-loading" class="auth-loading" style="display:flex;position:absolute;inset:0;background:inherit;z-index:10;border-radius:inherit;">
+    <div class="spinner"></div>
+    <div style="color:rgba(255,255,255,.9);font-size:14px;font-weight:700;">جاري التحميل...</div>
+  </div>
+
   <div class="auth-box">
-
-    <!-- LOADING -->
-    <div id="auth-loading" class="auth-loading">
-      <div class="spinner"></div>
-      <div>جاري التحقق من الحساب...</div>
-    </div>
-
-    <!-- LOGIN -->
-    <div id="auth-login" style="display:none;">
       <div class="auth-logo">⚡</div>
       <div class="auth-title">تسجيل الدخول</div>
       <div class="auth-sub">إدارة اشتراكات الكهرباء</div>
@@ -821,10 +820,11 @@ window.addEventListener('offline',()=>setSyncBadge(false));
 
 // ══════════ AUTH FLOW ══════════
 function showAuth(which){
-  ['auth-loading','auth-login','auth-signup','auth-pending','auth-rejected'].forEach(id=>{
-    document.getElementById(id).style.display = (id==='auth-'+which)?'block':'none';
+  document.getElementById('auth-loading').style.display = (which==='loading')?'flex':'none';
+  ['auth-login','auth-signup','auth-pending','auth-rejected'].forEach(id=>{
+    const key=id.replace('auth-','');
+    document.getElementById(id).style.display = (key===which)?'block':'none';
   });
-  if(which==='loading')document.getElementById('auth-loading').style.display='flex';
 }
 function authErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add('show');}
 function authErrClear(id){document.getElementById(id).classList.remove('show');}
@@ -872,6 +872,14 @@ function doLogin(){
 function doLogout(){
   if(fsUnsub){fsUnsub();fsUnsub=null;}
   userDocRef=null;
+  currentUser=null;
+  // مسح الكاش المحلي ليبدأ المستخدم القادم بصفحة نظيفة
+  subs=[];
+  renderAll();
+  // إظهار شاشة تسجيل الدخول فوراً قبل انتظار Firebase
+  document.getElementById('authScreen').classList.remove('hide');
+  showAuth('login');
+  // ثم تسجيل الخروج من Firebase
   auth.signOut();
 }
 function recheckApproval(){
@@ -1878,7 +1886,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-4';
+const APP_VERSION = '2026-06-14-5';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
