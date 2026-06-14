@@ -923,16 +923,28 @@ function checkUserStatus(user){
 function enterApp(user,data){
   localStorage.setItem('elec_approved_'+user.uid,'1');
 
-  // توجيه المسؤول تلقائياً بناءً على role في قاعدة البيانات (لا بريد مكتوب في الكود)
+  // توجيه المسؤول تلقائياً بناءً على role في قاعدة البيانات
   if(data.role==='admin'){
     window.location.href='admin.html';
     return;
   }
 
   document.getElementById('authScreen').classList.add('hide');
+
   // ترحيب باسم المستخدم
   const welcomeName=data.name||user.email.split('@')[0];
   document.getElementById('hdr-welcome').textContent='👋 مرحباً، '+welcomeName;
+
+  // مسح الكاش المحلي القديم (قد يكون من مستخدم آخر على نفس الجهاز)
+  const lastUID=localStorage.getItem('elec_last_uid');
+  if(lastUID !== user.uid){
+    // جهاز مشترك أو تغيّر المستخدم — امسح البيانات المحلية القديمة
+    localStorage.removeItem(SK);
+    localStorage.removeItem(PK);
+    subs=[];
+    gp=0.65;
+    localStorage.setItem('elec_last_uid', user.uid);
+  }
 
   userDocRef=db.collection('userdata').doc(user.uid);
 
@@ -1866,7 +1878,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-3';
+const APP_VERSION = '2026-06-14-4';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
