@@ -36,26 +36,17 @@
   --sh:0 2px 12px rgba(26,58,92,0.08);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
+html,body{height:100%;margin:0;padding:0;overflow:hidden;}
 body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
-.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;overflow:hidden;}
+.app{display:flex;flex-direction:column;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;position:relative;}
 .app.auth-visible{visibility:hidden;pointer-events:none;}
 
-/* ── شاشات أكبر (تابلت / لابتوب) ── */
-@media (min-width:701px){
-  body{background:linear-gradient(135deg,#dde6ef,#eef3f8);overflow:hidden;}
-  .app{
-    max-width:480px;
-    height:100vh;height:100dvh;
-    margin:0 auto;
-    box-shadow:0 0 60px rgba(20,40,70,.15);
-    overflow:hidden;
-  }
-}
-@media (min-width:1024px){
-  body{display:flex;align-items:center;justify-content:center;}
-  .app{max-width:500px;height:95vh;height:95dvh;border-radius:28px;border:1px solid rgba(255,255,255,.6);}
-  #authScreen{border-radius:28px;}
+/* ── تابلت / لابتوب ── */
+@media(min-width:700px){
+  body{background:linear-gradient(135deg,#c8d8e8,#dde8f2);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .app{max-width:460px;height:92vh;height:92dvh;border-radius:26px;box-shadow:0 20px 60px rgba(20,40,70,.2);overflow:hidden;}
+  #authScreen{border-radius:26px;}
+  .mback{border-radius:26px;}
 }
 
 /* ── HEADER ── */
@@ -236,7 +227,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .fbar-sel{padding:10px 9px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:12px;font-family:'Tajawal',sans-serif;background:var(--card);color:var(--text);outline:none;-webkit-appearance:none;}
 
 /* ── MODAL ── */
-.mback{position:fixed;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(3px);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.mback{position:absolute;inset:0;background:rgba(10,20,40,.55);backdrop-filter:blur(3px);z-index:200;display:none;align-items:flex-end;justify-content:center;border-radius:inherit;}
 .mback.on{display:flex;}
 .msheet{background:var(--card);border-radius:26px 26px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0));width:100%;max-width:430px;max-height:88vh;overflow-y:auto;animation:su .25s ease;}
 @keyframes su{from{transform:translateY(100%);}to{transform:translateY(0);}}
@@ -249,7 +240,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .empty h3{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:5px;}
 
 /* toast */
-.toast{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%) translateY(18px);background:var(--navy-dark);color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.toast{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%) translateY(18px);background:var(--navy-dark);color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
 .ctag{display:inline-flex;align-items:center;font-size:10px;background:var(--amber-bg);color:var(--amber);padding:2px 7px;border-radius:10px;font-weight:600;margin-right:5px;}
@@ -288,11 +279,8 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .sms-edit-area:focus{border-color:var(--navy);}
 
 /* ── AUTH SCREENS ── */
-#authScreen{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy-dark),var(--navy));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;}
+#authScreen{position:absolute;inset:0;background:linear-gradient(135deg,var(--navy-dark),var(--navy));z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;}
 #authScreen.hide{display:none;}
-@media (min-width:701px){
-  #authScreen{position:absolute;border-radius:28px;}
-}
 .auth-box{background:var(--card);border-radius:20px;padding:28px 22px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
 .auth-logo{text-align:center;font-size:40px;margin-bottom:6px;}
 .auth-title{text-align:center;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;}
@@ -308,13 +296,11 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 @keyframes spin{to{transform:rotate(360deg);}}
 .pending-box{text-align:center;}
 .pending-ico{font-size:50px;margin-bottom:10px;}
-#syncBadge{position:fixed;top:8px;left:8px;z-index:500;font-size:10px;padding:4px 10px;border-radius:20px;background:rgba(0,0,0,.35);color:#fff;display:none;align-items:center;gap:5px;}
+#syncBadge{position:absolute;top:8px;left:8px;z-index:500;font-size:10px;padding:4px 10px;border-radius:20px;background:rgba(0,0,0,.35);color:#fff;display:none;align-items:center;gap:5px;}
 #syncBadge.show{display:flex;}
 #syncBadge .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
 #syncBadge.offline .dot{background:var(--amber);}
-@media (min-width:701px){
-  #syncBadge{position:absolute;}
-}
+@media(min-width:700px){#syncBadge{display:none!important;}}
 </style>
 </head>
 <body>
@@ -909,9 +895,8 @@ auth.onAuthStateChanged(user=>{
 });
 
 function checkUserStatus(user){
-  db.collection('users').doc(user.uid).get({source:'default'}).then(doc=>{
+  db.collection('users').doc(user.uid).get().then(doc=>{
     if(!doc.exists){
-      // مستند غير موجود (نادر) — أنشئه كقيد انتظار
       db.collection('users').doc(user.uid).set({
         name:user.email, email:user.email, status:'pending',
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -928,11 +913,10 @@ function checkUserStatus(user){
     }
   }).catch(e=>{
     console.log('checkUserStatus error',e);
-    // بدون انترنت أو خطأ — اسمح بالدخول بالبيانات المحلية إن كان قد سبق قبوله
     if(localStorage.getItem('elec_approved_'+user.uid)==='1'){
-      enterApp(user,{status:'approved'});
+      enterApp(user,{status:'approved',name:user.email.split('@')[0]});
     } else {
-      showAuth('pending');
+      showAuth('login');
     }
   });
 }
@@ -1897,7 +1881,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-6';
+const APP_VERSION = '2026-06-14-7';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
