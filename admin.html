@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>لوحة المسؤول — اشتراكات الكهرباء</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -13,75 +14,167 @@
   --navy:#1a3a5c;--navy-dark:#112843;--navy-light:#2a5080;
   --bg:#f0f4f8;--card:#fff;
   --text:#1a2332;--text2:#5a6a7e;--text3:#8fa0b4;
-  --green:#00b894;--green-bg:#e8faf6;
+  --green:#00b894;--green-bg:#e8faf6;--green-dark:#00916e;
   --red:#e17055;--red-bg:#fef0ec;
   --amber:#f0a500;--amber-bg:#fff8e8;
   --border:#e4ecf4;--r:16px;
+  --sh:0 4px 20px rgba(0,0,0,.06);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-.wrap{max-width:760px;margin:0 auto;padding:18px;}
-.hdr{background:linear-gradient(135deg,var(--navy-dark),var(--navy));color:#fff;padding:22px 18px;border-radius:var(--r);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;}
-.hdr h1{font-size:18px;font-weight:800;}
-.hdr p{font-size:12px;opacity:.8;margin-top:3px;}
-.btn{padding:9px 16px;border-radius:10px;border:none;background:rgba(255,255,255,.15);color:#fff;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px;cursor:pointer;}
-.fc{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:'Tajawal',sans-serif;outline:none;background:var(--card);margin-bottom:10px;}
-.fc:focus{border-color:var(--navy);}
+
+/* ── AUTH GATE ── */
+#authGate{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy-dark),var(--navy));display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;}
+#authGate.hide{display:none;}
+.login-card{background:var(--card);border-radius:24px;padding:32px 26px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.25);}
+.login-logo{text-align:center;font-size:44px;margin-bottom:10px;}
+.login-title{text-align:center;font-size:20px;font-weight:800;color:var(--navy);}
+.login-sub{text-align:center;font-size:12px;color:var(--text2);margin:4px 0 22px;}
 .fl{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-weight:700;}
-.btn-main{width:100%;padding:13px;border-radius:12px;border:none;background:var(--navy);color:#fff;font-family:'Tajawal',sans-serif;font-weight:800;font-size:14px;cursor:pointer;margin-top:6px;}
-.login-box{background:var(--card);border-radius:var(--r);padding:26px 22px;max-width:380px;margin:60px auto;box-shadow:0 10px 30px rgba(0,0,0,.06);}
-.login-box h2{text-align:center;margin-bottom:4px;font-size:18px;color:var(--navy);}
-.login-box p{text-align:center;font-size:12px;color:var(--text2);margin-bottom:18px;}
-.err{background:var(--red-bg);color:var(--red);font-size:12px;padding:9px 12px;border-radius:10px;margin-bottom:10px;display:none;text-align:center;}
+.fc{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:'Tajawal',sans-serif;outline:none;background:var(--bg);margin-bottom:12px;color:var(--text);}
+.fc:focus{border-color:var(--navy);background:#fff;}
+.btn-login{width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;font-family:'Tajawal',sans-serif;font-weight:800;font-size:15px;cursor:pointer;margin-top:4px;transition:opacity .2s;}
+.btn-login:hover{opacity:.9;}
+.err{background:var(--red-bg);color:var(--red);font-size:12px;padding:9px 14px;border-radius:10px;margin-bottom:12px;display:none;text-align:center;}
 .err.show{display:block;}
-.sec-title{font-size:14px;font-weight:800;color:var(--navy);margin:18px 0 10px;}
-.card{background:var(--card);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.04);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.av{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;}
-.info{flex:1;min-width:140px;}
-.info .name{font-weight:800;font-size:14px;}
-.info .email{font-size:12px;color:var(--text2);direction:ltr;text-align:right;}
-.info .date{font-size:11px;color:var(--text3);margin-top:2px;}
-.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;}
+.back-link{text-align:center;margin-top:14px;font-size:12px;}
+.back-link a{color:var(--navy);font-weight:700;cursor:pointer;text-decoration:none;}
+
+/* ── LAYOUT ── */
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 40px;}
+
+/* ── TOP BAR ── */
+.topbar{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,var(--navy-light) 100%);border-radius:20px;padding:20px 22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 30px rgba(26,58,92,.25);}
+.topbar-left h1{color:#fff;font-size:19px;font-weight:800;}
+.topbar-left p{color:rgba(255,255,255,.7);font-size:12px;margin-top:3px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.admin-av{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+.btn-out{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);color:#fff;padding:8px 16px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:background .2s;}
+.btn-out:hover{background:rgba(255,255,255,.25);}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--card);border-radius:var(--r);padding:16px 14px;box-shadow:var(--sh);text-align:center;}
+.stat-ico{font-size:26px;margin-bottom:6px;}
+.stat-n{font-size:24px;font-weight:800;}
+.stat-l{font-size:11px;color:var(--text2);margin-top:2px;}
+.c-green{color:var(--green);}
+.c-amber{color:var(--amber);}
+.c-red{color:var(--red);}
+
+/* ── SECTIONS ── */
+.sec-hdr{font-size:14px;font-weight:800;color:var(--navy);margin:20px 0 10px;display:flex;align-items:center;gap:8px;}
+.badge-count{background:var(--navy);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;}
+.badge-count.amber{background:var(--amber);}
+.badge-count.green{background:var(--green);}
+
+/* ── USER CARDS ── */
+.ucard{background:var(--card);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);display:flex;align-items:center;gap:12px;flex-wrap:wrap;transition:box-shadow .2s;}
+.ucard:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);}
+.uav{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0;}
+.uinfo{flex:1;min-width:120px;}
+.uname{font-weight:800;font-size:14px;}
+.uemail{font-size:12px;color:var(--text2);direction:ltr;text-align:right;}
+.udate{font-size:11px;color:var(--text3);margin-top:2px;}
+.ubadge{font-size:11px;padding:5px 12px;border-radius:20px;font-weight:700;white-space:nowrap;}
 .b-pending{background:var(--amber-bg);color:var(--amber);}
-.b-approved{background:var(--green-bg);color:var(--green);}
+.b-approved{background:var(--green-bg);color:var(--green-dark);}
 .b-rejected{background:var(--red-bg);color:var(--red);}
-.actions{display:flex;gap:6px;width:100%;}
-.actions button{flex:1;padding:9px;border-radius:10px;border:none;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px;cursor:pointer;}
-.act-approve{background:var(--green);color:#fff;}
-.act-reject{background:var(--red);color:#fff;}
-.act-revoke{background:var(--bg);color:var(--text2);border:1.5px solid var(--border)!important;}
-.empty{text-align:center;color:var(--text3);font-size:13px;padding:30px 0;}
+.uactions{display:flex;gap:6px;}
+.ua-btn{padding:8px 14px;border-radius:10px;border:none;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.ua-btn:hover{opacity:.85;}
+.ua-approve{background:var(--green);color:#fff;}
+.ua-reject{background:var(--red);color:#fff;}
+.ua-revoke{background:var(--bg);color:var(--text2);border:1.5px solid var(--border)!important;}
+.empty{text-align:center;color:var(--text3);font-size:13px;padding:30px 0;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);}
+.empty-ico{font-size:36px;margin-bottom:8px;}
 .loading{text-align:center;padding:40px;color:var(--text2);}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;}
+.toast.on{opacity:1;}
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:repeat(3,1fr);}
+  .ucard{flex-direction:column;align-items:flex-start;}
+  .uactions{width:100%;}
+  .ua-btn{flex:1;text-align:center;}
+}
 </style>
 </head>
 <body>
 
-<div id="loginScreen" class="login-box">
-  <h2>🔐 لوحة المسؤول</h2>
-  <p>تسجيل دخول المسؤول فقط</p>
-  <div class="err" id="loginErr"></div>
-  <label class="fl">البريد الإلكتروني</label>
-  <input type="email" class="fc" id="adminEmail" style="direction:ltr;text-align:right;">
-  <label class="fl">كلمة المرور</label>
-  <input type="password" class="fc" id="adminPass">
-  <button class="btn-main" onclick="adminLogin()">دخول</button>
-</div>
-
-<div id="adminPanel" class="wrap" style="display:none;">
-  <div class="hdr">
-    <div>
-      <h1>⚡ لوحة المسؤول</h1>
-      <p id="adminEmailTxt"></p>
-    </div>
-    <button class="btn" onclick="adminLogout()">خروج</button>
+<!-- AUTH GATE -->
+<div id="authGate">
+  <div class="login-card">
+    <div class="login-logo">⚡</div>
+    <div class="login-title">لوحة المسؤول</div>
+    <div class="login-sub">تسجيل دخول المسؤول فقط</div>
+    <div class="err" id="loginErr"></div>
+    <label class="fl">البريد الإلكتروني</label>
+    <input type="email" class="fc" id="adminEmail" style="direction:ltr;text-align:right;" placeholder="admin@example.com">
+    <label class="fl">كلمة المرور</label>
+    <input type="password" class="fc" id="adminPass" placeholder="••••••">
+    <button class="btn-login" onclick="adminLogin()">تسجيل الدخول</button>
+    <div class="back-link"><a href="index.html">← العودة للتطبيق</a></div>
   </div>
-
-  <div class="sec-title">⏳ طلبات قيد المراجعة</div>
-  <div id="pendingList"><div class="loading">جاري التحميل...</div></div>
-
-  <div class="sec-title">👥 جميع المستخدمين</div>
-  <div id="allList"></div>
 </div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none;">
+  <div class="wrap">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>⚡ لوحة تحكم المسؤول</h1>
+        <p id="adminWelcome">مرحباً...</p>
+      </div>
+      <div class="topbar-right">
+        <div class="admin-av" id="adminAv">م</div>
+        <button class="btn-out" onclick="adminLogout()">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-ico">👥</div>
+        <div class="stat-n" id="st-total">0</div>
+        <div class="stat-l">إجمالي المستخدمين</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">⏳</div>
+        <div class="stat-n c-amber" id="st-pending">0</div>
+        <div class="stat-l">قيد المراجعة</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ico">✅</div>
+        <div class="stat-n c-green" id="st-approved">0</div>
+        <div class="stat-l">مفعّلون</div>
+      </div>
+    </div>
+
+    <!-- PENDING -->
+    <div class="sec-hdr">
+      ⏳ طلبات قيد المراجعة
+      <span class="badge-count amber" id="pending-badge">0</span>
+    </div>
+    <div id="pendingList"><div class="loading"><div class="spinner"></div>جاري التحميل...</div></div>
+
+    <!-- ALL USERS -->
+    <div class="sec-hdr">
+      👥 جميع المستخدمين
+      <span class="badge-count" id="all-badge">0</span>
+    </div>
+    <div id="allList"></div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 const firebaseConfig = {
@@ -96,8 +189,13 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ضع هنا بريدك الإلكتروني الذي ستستخدمه كمسؤول
-const ADMIN_EMAILS = ["mateetrasheed@gmail.com"];
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2500);}
+function ini(n){return (n||'؟').trim()[0].toUpperCase();}
+function fmtDate(ts){
+  if(!ts)return '';
+  try{const d=ts.toDate?ts.toDate():new Date(ts);return d.toLocaleDateString('ar-PS',{day:'numeric',month:'short',year:'numeric'});}
+  catch(e){return '';}
+}
 
 function adminLogin(){
   const errEl=document.getElementById('loginErr');
@@ -113,93 +211,110 @@ function adminLogin(){
 function adminLogout(){auth.signOut();}
 
 auth.onAuthStateChanged(user=>{
-  if(user && ADMIN_EMAILS.includes(user.email)){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('adminPanel').style.display='block';
-    document.getElementById('adminEmailTxt').textContent=user.email;
-    loadUsers();
-  } else if(user){
-    auth.signOut();
-    const errEl=document.getElementById('loginErr');
-    errEl.textContent='هذا الحساب غير مصرّح له بالدخول للوحة المسؤول';
-    errEl.classList.add('show');
+  if(user){
+    // فحص الصلاحية من قاعدة البيانات (لا من الكود)
+    db.collection('users').doc(user.uid).get().then(doc=>{
+      if(doc.exists && doc.data().role==='admin'){
+        document.getElementById('authGate').classList.add('hide');
+        document.getElementById('adminPanel').style.display='block';
+        const name=doc.data().name||user.email.split('@')[0];
+        document.getElementById('adminWelcome').textContent='مرحباً، '+name+' 👋';
+        document.getElementById('adminAv').textContent=ini(name);
+        loadUsers();
+      } else {
+        auth.signOut();
+        const errEl=document.getElementById('loginErr');
+        errEl.textContent='هذا الحساب غير مصرّح له بالدخول للوحة المسؤول';
+        errEl.classList.add('show');
+        document.getElementById('authGate').classList.remove('hide');
+        document.getElementById('adminPanel').style.display='none';
+      }
+    }).catch(()=>{
+      auth.signOut();
+    });
   } else {
-    document.getElementById('loginScreen').style.display='block';
+    document.getElementById('authGate').classList.remove('hide');
     document.getElementById('adminPanel').style.display='none';
   }
 });
 
-function ini(name){return (name||'؟').trim().split(' ')[0].slice(0,1).toUpperCase();}
-function fmtDate(ts){
-  if(!ts)return '';
-  const d=ts.toDate?ts.toDate():new Date(ts);
-  return d.toLocaleDateString('ar-PS',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-}
-
 function loadUsers(){
   db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{
-    const pending=[], all=[];
+    const all=[], pending=[];
     snap.forEach(doc=>{
       const d={id:doc.id,...doc.data()};
       all.push(d);
       if(d.status==='pending')pending.push(d);
     });
+    // stats
+    document.getElementById('st-total').textContent=all.length;
+    document.getElementById('st-pending').textContent=pending.length;
+    document.getElementById('st-approved').textContent=all.filter(u=>u.status==='approved').length;
+    document.getElementById('pending-badge').textContent=pending.length;
+    document.getElementById('all-badge').textContent=all.length;
     renderPending(pending);
     renderAll(all);
   },err=>{
-    document.getElementById('pendingList').innerHTML=`<div class="empty">خطأ في التحميل: ${err.message}</div>`;
+    document.getElementById('pendingList').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div>خطأ في التحميل</div>`;
   });
 }
 
 function renderPending(list){
   const el=document.getElementById('pendingList');
-  if(!list.length){el.innerHTML=`<div class="empty">لا توجد طلبات قيد المراجعة 🎉</div>`;return;}
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">🎉</div>لا توجد طلبات قيد المراجعة</div>`;
+    return;
+  }
   el.innerHTML=list.map(u=>`
-    <div class="card">
-      <div class="av">${ini(u.name)}</div>
-      <div class="info">
-        <div class="name">${u.name||'بدون اسم'}</div>
-        <div class="email">${u.email||''}</div>
-        <div class="date">📅 ${fmtDate(u.createdAt)}</div>
+    <div class="ucard">
+      <div class="uav">${ini(u.name)}</div>
+      <div class="uinfo">
+        <div class="uname">${u.name||'بدون اسم'}</div>
+        <div class="uemail">${u.email||''}</div>
+        <div class="udate">📅 ${fmtDate(u.createdAt)}</div>
       </div>
-      <span class="badge b-pending">⏳ قيد المراجعة</span>
-      <div class="actions">
-        <button class="act-approve" onclick="setStatus('${u.id}','approved')">✅ قبول</button>
-        <button class="act-reject" onclick="setStatus('${u.id}','rejected')">🚫 رفض</button>
+      <span class="ubadge b-pending">⏳ قيد المراجعة</span>
+      <div class="uactions">
+        <button class="ua-btn ua-approve" onclick="setStatus('${u.id}','approved')">✅ قبول</button>
+        <button class="ua-btn ua-reject" onclick="setStatus('${u.id}','rejected')">🚫 رفض</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderAll(list){
   const el=document.getElementById('allList');
-  if(!list.length){el.innerHTML=`<div class="empty">لا يوجد مستخدمون بعد</div>`;return;}
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">👥</div>لا يوجد مستخدمون بعد</div>`;return;}
   el.innerHTML=list.map(u=>{
     let badge='', actions='';
     if(u.status==='approved'){
-      badge=`<span class="badge b-approved">✅ مفعّل</span>`;
-      actions=`<div class="actions"><button class="act-revoke" onclick="setStatus('${u.id}','rejected')">🚫 إيقاف الحساب</button></div>`;
+      badge=`<span class="ubadge b-approved">✅ مفعّل</span>`;
+      actions=`<div class="uactions"><button class="ua-btn ua-revoke" onclick="setStatus('${u.id}','rejected')">🚫 إيقاف</button></div>`;
     } else if(u.status==='rejected'){
-      badge=`<span class="badge b-rejected">🚫 مرفوض</span>`;
-      actions=`<div class="actions"><button class="act-approve" onclick="setStatus('${u.id}','approved')">✅ قبول</button></div>`;
+      badge=`<span class="ubadge b-rejected">🚫 موقوف</span>`;
+      actions=`<div class="uactions"><button class="ua-btn ua-approve" onclick="setStatus('${u.id}','approved')">✅ تفعيل</button></div>`;
     } else {
-      badge=`<span class="badge b-pending">⏳ قيد المراجعة</span>`;
+      badge=`<span class="ubadge b-pending">⏳ انتظار</span>`;
+      actions=`<div class="uactions">
+        <button class="ua-btn ua-approve" onclick="setStatus('${u.id}','approved')">✅ قبول</button>
+        <button class="ua-btn ua-reject" onclick="setStatus('${u.id}','rejected')">🚫 رفض</button>
+      </div>`;
     }
-    return `<div class="card">
-      <div class="av">${ini(u.name)}</div>
-      <div class="info">
-        <div class="name">${u.name||'بدون اسم'}</div>
-        <div class="email">${u.email||''}</div>
-        <div class="date">📅 ${fmtDate(u.createdAt)}</div>
+    return `<div class="ucard">
+      <div class="uav">${ini(u.name)}</div>
+      <div class="uinfo">
+        <div class="uname">${u.name||'بدون اسم'}</div>
+        <div class="uemail">${u.email||''}</div>
+        <div class="udate">📅 ${fmtDate(u.createdAt)}</div>
       </div>
-      ${badge}
-      ${actions}
+      ${badge}${actions}
     </div>`;
   }).join('');
 }
 
 function setStatus(uid,status){
-  db.collection('users').doc(uid).update({status:status});
+  db.collection('users').doc(uid).update({status}).then(()=>{
+    toast(status==='approved'?'✅ تم قبول المستخدم':'🚫 تم إيقاف المستخدم');
+  });
 }
 </script>
 </body>
