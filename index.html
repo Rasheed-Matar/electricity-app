@@ -39,43 +39,33 @@
 html,body{height:100%;margin:0;padding:0;overflow:hidden;}
 body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none;}
 
-/* ══ MOBILE (الأصل) ══ */
+/* ══ MOBILE — الأصل ══ */
 .app{display:flex;flex-direction:column;width:100%;max-width:430px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;position:relative;}
 .app.auth-visible{visibility:hidden;pointer-events:none;}
 .sidebar-logout{display:none;}
-.main-content-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 
-/* ══ TABLET / LAPTOP — نفس التصميم لكن أكبر ══ */
+/* ══ TABLET & LAPTOP — نفس التصميم، أكبر وأجمل ══ */
 @media(min-width:600px){
   body{
-    background:linear-gradient(135deg,#1e3f6e,#2a5080);
+    background:linear-gradient(145deg,#1a2f4a 0%,#1e3f6e 50%,#1a2f4a 100%);
     display:flex;align-items:center;justify-content:center;
     overflow:hidden;
   }
   .app{
-    max-width:680px;
-    width:96vw;
-    height:94vh;height:94dvh;
-    border-radius:24px;
-    box-shadow:0 24px 80px rgba(0,0,0,.35);
+    max-width:580px;width:94vw;
+    height:92vh;height:92dvh;
+    border-radius:20px;
+    box-shadow:0 30px 80px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.08);
     overflow:hidden;
   }
-  #authScreen{border-radius:24px;}
-  .mback{border-radius:24px;}
+  #authScreen{border-radius:20px;}
+  .mback{border-radius:20px;}
 }
-
 @media(min-width:900px){
-  .app{
-    max-width:820px;
-    height:92vh;height:92dvh;
-  }
+  .app{max-width:720px;height:90vh;height:90dvh;}
 }
-
-@media(min-width:1200px){
-  .app{
-    max-width:960px;
-    height:90vh;height:90dvh;
-  }
+@media(min-width:1280px){
+  .app{max-width:860px;height:88vh;height:88dvh;}
 }
 
 /* ── HEADER ── */
@@ -445,15 +435,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
   </button>
 </div>
 
-<!-- Sidebar logout (desktop only) -->
-<div class="sidebar-logout">
-  <button onclick="doLogout()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    تسجيل الخروج
-  </button>
-</div>
-
-<!-- Main content area (wraps scroll content on desktop) -->
+<!-- Main content area -->
 <div class="main-content-area">
 <div class="wrap">
 
@@ -1944,7 +1926,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-10';
+const APP_VERSION = '2026-06-14-11';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
