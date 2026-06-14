@@ -388,12 +388,15 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
         <div class="brand-ico">⚡</div>
         <div>
           <h1>اشتراكات الكهرباء</h1>
-          <p id="hdr-welcome">إدارة المشتركين والفواتير</p>
+          <p id="hdr-welcome" style="font-size:12.5px;font-weight:700;opacity:.95;margin-top:2px;letter-spacing:.2px;">إدارة المشتركين والفواتير</p>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="hdr-date" id="hdrDate"></div>
-        <button onclick="doLogout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;">خروج</button>
+        <button onclick="doLogout()" style="background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:12px;padding:7px 12px;font-size:11px;font-family:'Tajawal',sans-serif;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          خروج
+        </button>
       </div>
     </div>
     <div class="big-stats">
@@ -929,7 +932,7 @@ function enterApp(user,data){
   document.getElementById('authScreen').classList.add('hide');
   // ترحيب باسم المستخدم
   const welcomeName=data.name||user.email.split('@')[0];
-  document.getElementById('hdr-welcome').textContent='مرحباً '+welcomeName+' 👋';
+  document.getElementById('hdr-welcome').textContent='👋 مرحباً، '+welcomeName;
 
   userDocRef=db.collection('userdata').doc(user.uid);
 
@@ -939,22 +942,21 @@ function enterApp(user,data){
   fsUnsub=userDocRef.onSnapshot({includeMetadataChanges:true},snap=>{
     setSyncBadge(!snap.metadata.fromCache);
     if(snap.exists){
+      // بيانات موجودة في السحابة — استخدمها دائماً
+      suppressSave=true;
       const d=snap.data();
-      if(firstSnap && (!d.subs || d.subs.length===0) && subs.length>0){
-        // أول مرة والسحابة فارغة لكن يوجد بيانات محلية — رفعها للسحابة
-        save();
-      } else {
-        suppressSave=true;
-        subs=d.subs||[];
-        gp=(typeof d.gp==='number')?d.gp:gp;
-        localStorage.setItem(SK,JSON.stringify(subs));
-        localStorage.setItem(PK,String(gp));
-        renderAll();
-        suppressSave=false;
-      }
+      subs=d.subs||[];
+      gp=(typeof d.gp==='number')?d.gp:gp;
+      localStorage.setItem(SK,JSON.stringify(subs));
+      localStorage.setItem(PK,String(gp));
+      renderAll();
+      suppressSave=false;
     } else {
-      // أول استخدام لهذا الحساب — رفع البيانات المحلية الحالية (إن وُجدت) للسحابة
-      save();
+      // حساب جديد — ابدأ بصفحة فارغة تماماً (لا ترفع بيانات الجهاز القديمة)
+      subs=[];
+      gp=parseFloat(localStorage.getItem(PK)||'0.65');
+      localStorage.setItem(SK,'[]');
+      renderAll();
     }
     firstSnap=false;
   },err=>{console.log('snapshot error',err);setSyncBadge(false);});
@@ -1864,7 +1866,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-2';
+const APP_VERSION = '2026-06-14-3';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
