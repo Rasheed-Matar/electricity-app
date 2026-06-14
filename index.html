@@ -892,11 +892,6 @@ function checkUserStatus(user){
       return;
     }
     const data=doc.data();
-    // ── إذا كان role = admin → حوّله لصفحة الأدمن (يُقرأ من Firestore) ──
-    if(data.role === 'admin'){
-      window.location.href = "admin.html";
-      return;
-    }
     if(data.status==='approved'){
       enterApp(user,data);
     } else if(data.status==='rejected'){
