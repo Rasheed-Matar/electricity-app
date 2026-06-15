@@ -316,6 +316,16 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 @keyframes spin{to{transform:rotate(360deg);}}
 .pending-box{text-align:center;}
 .pending-ico{font-size:50px;margin-bottom:10px;}
+/* password field with eye */
+.pw-wrap{position:relative;margin-bottom:12px;}
+.pw-wrap .fc{margin-bottom:0;padding-left:42px;}
+.pw-eye{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;display:flex;align-items:center;}
+.pw-eye:hover{color:var(--navy);}
+.forgot-link{text-align:left;margin-top:-6px;margin-bottom:12px;}
+.forgot-link a{font-size:11px;color:var(--navy);cursor:pointer;font-weight:600;}
+.forgot-link a:hover{text-decoration:underline;}
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text3);font-size:11px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 #syncBadge{position:absolute;top:8px;left:8px;z-index:500;font-size:10px;padding:4px 10px;border-radius:20px;background:rgba(0,0,0,.35);color:#fff;display:none;align-items:center;gap:5px;}
 #syncBadge.show{display:flex;}
 #syncBadge .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
@@ -342,9 +352,22 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="auth-title">تسجيل الدخول</div>
       <div class="auth-sub">إدارة اشتراكات الكهرباء</div>
       <div class="auth-err" id="login-err"></div>
-      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fc" id="login-email" style="direction:ltr;text-align:right;"></div>
-      <div class="fg"><label class="fl">كلمة المرور</label><input type="password" class="fc" id="login-pass"></div>
-      <button class="btn-main" onclick="doLogin()">دخول</button>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fc" id="login-email" placeholder="example@email.com" style="direction:ltr;text-align:right;" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
+      <div class="fg">
+        <label class="fl">كلمة المرور</label>
+        <div class="pw-wrap">
+          <input type="password" class="fc" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pw-eye" type="button" onclick="togglePw('login-pass',this)" tabindex="-1">
+            <svg id="eye-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="forgot-link"><a onclick="showAuth('forgot')">نسيت كلمة المرور؟</a></div>
+      <button class="btn-main" onclick="doLogin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15" style="margin-left:6px;"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        دخول
+      </button>
+      <div class="divider">أو</div>
       <div class="auth-switch">ليس لديك حساب؟ <a onclick="showAuth('signup')">إنشاء حساب جديد</a></div>
     </div>
 
@@ -354,11 +377,35 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="auth-title">إنشاء حساب جديد</div>
       <div class="auth-sub">سيتم مراجعة طلبك من المسؤول قبل الدخول</div>
       <div class="auth-err" id="signup-err"></div>
-      <div class="fg"><label class="fl">الاسم</label><input type="text" class="fc" id="signup-name"></div>
-      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fc" id="signup-email" style="direction:ltr;text-align:right;"></div>
-      <div class="fg"><label class="fl">كلمة المرور (6 أحرف فأكثر)</label><input type="password" class="fc" id="signup-pass"></div>
+      <div class="fg"><label class="fl">الاسم الكامل</label><input type="text" class="fc" id="signup-name" placeholder="مثال: أحمد محمد" onkeydown="if(event.key==='Enter')document.getElementById('signup-email').focus()"></div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fc" id="signup-email" placeholder="example@email.com" style="direction:ltr;text-align:right;" onkeydown="if(event.key==='Enter')document.getElementById('signup-pass').focus()"></div>
+      <div class="fg">
+        <label class="fl">كلمة المرور (6 أحرف فأكثر)</label>
+        <div class="pw-wrap">
+          <input type="password" class="fc" id="signup-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignup()">
+          <button class="pw-eye" type="button" onclick="togglePw('signup-pass',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
       <button class="btn-main" onclick="doSignup()">إنشاء الحساب</button>
+      <div class="divider">أو</div>
       <div class="auth-switch">لديك حساب؟ <a onclick="showAuth('login')">تسجيل الدخول</a></div>
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div id="auth-forgot" style="display:none;">
+      <div class="auth-logo">🔑</div>
+      <div class="auth-title">استعادة كلمة المرور</div>
+      <div class="auth-sub">أدخل بريدك وسنرسل لك رابط الاستعادة</div>
+      <div class="auth-err" id="forgot-err"></div>
+      <div class="auth-msg" id="forgot-msg"></div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label><input type="email" class="fc" id="forgot-email" placeholder="example@email.com" style="direction:ltr;text-align:right;" onkeydown="if(event.key==='Enter')doForgot()"></div>
+      <button class="btn-main" onclick="doForgot()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15" style="margin-left:6px;"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 15z"/></svg>
+        إرسال رابط الاستعادة
+      </button>
+      <div class="auth-switch" style="margin-top:10px;"><a onclick="showAuth('login')">← العودة لتسجيل الدخول</a></div>
     </div>
 
     <!-- PENDING APPROVAL -->
@@ -496,6 +543,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <option value="all">الكل</option>
       <option value="due">عليه مبلغ</option>
       <option value="ok">مسدد</option>
+      <option value="archived">📦 المؤرشفون</option>
     </select>
   </div>
   <div id="subs-list"></div>
@@ -648,9 +696,10 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="fg"><label class="fl">القراءة السابقة</label><input type="number" class="fc" id="inv-prev" placeholder="0" min="0" oninput="updInvCalc()"></div>
       <div class="fg"><label class="fl">القراءة الحالية</label><input type="number" class="fc" id="inv-curr" placeholder="0" min="0" oninput="updInvCalc()"></div>
     </div>
-    <div style="background:var(--bg);border-radius:11px;padding:10px 13px;margin-bottom:14px;font-size:13px;color:var(--text2);">
+    <div style="background:var(--bg);border-radius:11px;padding:10px 13px;margin-bottom:10px;font-size:13px;color:var(--text2);">
       المبلغ المحسوب: <strong id="inv-calc" style="color:var(--navy);font-size:18px;">0 ₪</strong>
     </div>
+    <div class="fg"><label class="fl">ملاحظات (اختياري)</label><input type="text" class="fc" id="inv-notes" placeholder="مثال: دفع جزئي، اتفاق خاص..."></div>
     <button class="btn-main" onclick="saveInv()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       إضافة الفاتورة
@@ -765,6 +814,9 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <button class="ab ab-edit" onclick="msdAction('openEdit')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></svg>
       </button>
+      <button class="ab" style="color:var(--amber);border-color:rgba(240,165,0,.2);" onclick="msdArchiveToggle()" id="msd-archive-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      </button>
       <button class="ab ab-del" onclick="msdAction('delSub')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
       </button>
@@ -836,9 +888,36 @@ function showAuth(which){
   }
   loading.style.display='none';
   box.style.display='block';
-  ['auth-login','auth-signup','auth-pending','auth-rejected'].forEach(id=>{
-    document.getElementById(id).style.display=(id==='auth-'+which)?'block':'none';
+  ['auth-login','auth-signup','auth-pending','auth-rejected','auth-forgot'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display=(id==='auth-'+which)?'block':'none';
   });
+}
+function togglePw(inputId,btn){
+  const inp=document.getElementById(inputId);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.innerHTML=show
+    ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+function doForgot(){
+  const errEl=document.getElementById('forgot-err');
+  const msgEl=document.getElementById('forgot-msg');
+  errEl.classList.remove('show');msgEl.classList.remove('show');
+  const email=document.getElementById('forgot-email').value.trim();
+  if(!email){errEl.textContent='أدخل البريد الإلكتروني';errEl.classList.add('show');return;}
+  auth.sendPasswordResetEmail(email)
+    .then(()=>{
+      msgEl.textContent='✅ تم إرسال رابط الاستعادة، تحقق من بريدك الإلكتروني';
+      msgEl.classList.add('show');
+      document.getElementById('forgot-email').value='';
+    })
+    .catch(e=>{
+      const msgs={'auth/user-not-found':'لا يوجد حساب بهذا البريد','auth/invalid-email':'البريد غير صحيح'};
+      errEl.textContent=msgs[e.code]||'حدث خطأ، حاول مجدداً';
+      errEl.classList.add('show');
+    });
 }
 function authErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add('show');}
 function authErrClear(id){document.getElementById(id).classList.remove('show');}
@@ -1116,15 +1195,30 @@ function renderSubDetails(){
       <span class="sc-total-val" style="color:${last.paid?'var(--green)':'var(--amber)'}">${lb.amt} ₪</span>
     </div>`;
     if(owed>0){
+      const credit=subCredit(s);
       totalRow=`<div class="sc-total" style="background:var(--red-bg);">
         <span class="sc-total-lbl" style="color:var(--red);font-weight:700;">💰 إجمالي المستحق (${unpaidN} فاتورة)</span>
         <span class="sc-total-val" style="color:var(--red);">${owed.toFixed(2)} ₪</span>
       </div>`;
+      if(credit>0){
+        totalRow+=`<div class="sc-total" style="background:var(--green-bg);">
+          <span class="sc-total-lbl" style="color:var(--green);font-weight:700;">💳 رصيد دائن</span>
+          <span class="sc-total-val" style="color:var(--green);">−${credit.toFixed(2)} ₪</span>
+        </div>`;
+      }
     } else if(invs.length>0){
-      totalRow=`<div class="sc-total" style="background:var(--green-bg);">
-        <span class="sc-total-lbl" style="color:var(--green);">✅ جميع الفواتير مسددة</span>
-        <span class="sc-total-val" style="color:var(--green);">0 ₪</span>
-      </div>`;
+      const credit=subCredit(s);
+      if(credit>0){
+        totalRow=`<div class="sc-total" style="background:var(--green-bg);">
+          <span class="sc-total-lbl" style="color:var(--green);font-weight:700;">💳 رصيد دائن (له)</span>
+          <span class="sc-total-val" style="color:var(--green);">−${credit.toFixed(2)} ₪</span>
+        </div>`;
+      } else {
+        totalRow=`<div class="sc-total" style="background:var(--green-bg);">
+          <span class="sc-total-lbl" style="color:var(--green);">✅ جميع الفواتير مسددة</span>
+          <span class="sc-total-val" style="color:var(--green);">0 ₪</span>
+        </div>`;
+      }
     }
   } else {
     strip=`<div class="sc-strip">
@@ -1142,12 +1236,17 @@ function renderSubDetails(){
         const ii=invs.length-1-ri;
         const ib=calcInv(inv,p);
         return `<div class="inv-row">
-          <div>
+          <div style="flex:1;min-width:0;">
             <div class="inv-week">${inv.week}</div>
             <div class="inv-read">${inv.prevReading} ← ${inv.currReading} | ${ib.cons.toFixed(2)} ك.و.س</div>
+            ${inv.notes?`<div style="font-size:11px;color:var(--text2);margin-top:2px;">📝 ${inv.notes}</div>`:''}
+            ${inv.paidAmount>0&&!inv.paid?`<div style="font-size:11px;color:var(--green);">دُفع جزئياً: ${inv.paidAmount.toFixed(2)} ₪</div>`:''}
           </div>
           <span class="inv-amt ${inv.paid?'paid':'due'}">${ib.amt} ₪</span>
-          ${!inv.paid?`<button class="ipay-btn" onclick="payInv('${s.id}',${ii});renderSubDetails();">دفع ✓</button>`:`<span style="font-size:11px;color:var(--green);font-weight:700;">✓ مدفوع</span>`}
+          ${!inv.paid
+            ?`<button class="ipay-btn" onclick="payInv('${s.id}',${ii});renderSubDetails();">دفع ✓</button>`
+            :`<button class="ipay-btn" style="background:var(--amber);" onclick="undoPayInv('${s.id}',${ii});renderSubDetails();">↺ إلغاء</button>`
+          }
           <button class="idel-btn" onclick="delInv('${s.id}',${ii});renderSubDetails();">🗑</button>
         </div>`;
       }).join('')}
@@ -1157,13 +1256,27 @@ function renderSubDetails(){
   document.getElementById('msd-name').textContent=s.name;
   document.getElementById('msd-phone').innerHTML=priceTag+s.phone;
   document.getElementById('msd-av').textContent=ini(s.name);
-  document.getElementById('msd-badge').innerHTML=`<span class="badge ${bc}">${bt}</span>`;
+  document.getElementById('msd-badge').innerHTML=s.archived
+    ?`<span class="badge" style="background:var(--amber-bg);color:var(--amber);">📦 مؤرشف</span>`
+    :`<span class="badge ${bc}">${bt}</span>`;
+  const archBtn=document.getElementById('msd-archive-btn');
+  if(archBtn){
+    archBtn.title=s.archived?'إعادة تفعيل':'أرشفة';
+    archBtn.innerHTML=s.archived
+      ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>`
+      :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
+  }
   document.getElementById('msd-body').innerHTML=`${strip}${totalRow}${histHTML}`;
 }
 function msdAction(fn){
   const id=detailSubId;
   cm('mSubDetails');
   window[fn](id);
+}
+function msdArchiveToggle(){
+  const s=subs.find(x=>x.id===detailSubId);if(!s)return;
+  if(s.archived) unarchiveSub(detailSubId);
+  else archiveSub(detailSubId);
 }
 
 function togHist(id){openHist[id]=!openHist[id];renderAll();}
@@ -1174,11 +1287,20 @@ function renderSubs(){
   const list=subs.filter(s=>{
     const mq=!q||s.name.toLowerCase().includes(q)||s.phone.includes(q);
     const owed=subOwed(s);
-    const mf=f==='all'||(f==='due'&&owed>0)||(f==='ok'&&owed===0);
+    const isArchived=!!s.archived;
+    let mf=false;
+    if(f==='archived') mf=isArchived;
+    else if(f==='all') mf=!isArchived;
+    else if(f==='due') mf=!isArchived&&owed>0;
+    else if(f==='ok') mf=!isArchived&&owed===0;
     return mq&&mf;
   });
   const el=document.getElementById('subs-list');
-  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div><h3>لا توجد نتائج</h3></div>`;return;}
+  if(!list.length){
+    const msg=f==='archived'?'لا يوجد مشتركون مؤرشفون':'لا توجد نتائج';
+    el.innerHTML=`<div class="empty"><div class="empty-ico">${f==='archived'?'📦':'🔍'}</div><h3>${msg}</h3></div>`;
+    return;
+  }
   el.innerHTML=list.map(s=>buildSC(s)).join('');
 }
 
@@ -1321,6 +1443,13 @@ function payInv(subId,ii){
   s.invoices[ii].paidAmount=calcInv(s.invoices[ii],price(s)).amt;
   save();renderAll();toast('✅ تم تسجيل الدفع');
 }
+function undoPayInv(subId,ii){
+  const s=subs.find(x=>x.id===subId);if(!s)return;
+  s.invoices[ii].paid=false;
+  s.invoices[ii].paidAmount=0;
+  // إرجاع المبلغ للرصيد الدائن إذا كان الدفع من رصيد دائن
+  save();renderAll();toast('↺ تم إلغاء الدفع');
+}
 function delInv(subId,ii){
   const s=subs.find(x=>x.id===subId);
   if(!s||!confirm('حذف هذه الفاتورة؟'))return;
@@ -1361,12 +1490,14 @@ function saveInv(){
   const dateVal=document.getElementById('inv-week-date').value;
   const prev=parseFloat(document.getElementById('inv-prev').value||'0');
   const curr=parseFloat(document.getElementById('inv-curr').value||'0');
+  const notes=document.getElementById('inv-notes').value.trim();
   if(!dateVal){toast('⚠️ اختر تاريخ الفاتورة');return;}
   if(curr<prev){toast('⚠️ القراءة الحالية أقل من السابقة');return;}
   const s=subs.find(x=>x.id===invSubId);if(!s)return;
   if(!s.invoices)s.invoices=[];
   const week=weekLabelFromDate(dateVal);
-  s.invoices.push({id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false});
+  s.invoices.push({id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false,notes});
+  document.getElementById('inv-notes').value='';
   save();cm('mInv');renderAll();toast(`✅ تمت إضافة الفاتورة لـ ${s.name}`);
 }
 
@@ -1449,10 +1580,21 @@ function saveEdit(){
   save();cm('mEdit');renderAll();toast('✅ تم الحفظ');
 }
 
+function archiveSub(id){
+  const s=subs.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`تعطيل اشتراك "${s.name}"؟\nسيتم أرشفته ويمكن إعادة تفعيله لاحقاً.`))return;
+  s.archived=true;s.archivedAt=new Date().toISOString();
+  save();cm('mSubDetails');renderAll();toast('📦 تم أرشفة المشترك');
+}
+function unarchiveSub(id){
+  const s=subs.find(x=>x.id===id);if(!s)return;
+  s.archived=false;delete s.archivedAt;
+  save();renderAll();toast('✅ تم إعادة تفعيل المشترك');
+}
 function delSub(id){
   const s=subs.find(x=>x.id===id);
-  if(!s||!confirm(`حذف "${s.name}"؟`))return;
-  subs=subs.filter(x=>x.id!==id);save();renderAll();toast('🗑️ تم الحذف');
+  if(!s||!confirm(`حذف "${s.name}" نهائياً؟\nلا يمكن التراجع عن هذا الإجراء.`))return;
+  subs=subs.filter(x=>x.id!==id);save();cm('mSubDetails');renderAll();toast('🗑️ تم الحذف نهائياً');
 }
 
 // ── SMS ──
@@ -1469,14 +1611,14 @@ function setSmsType(t) {
 // رسالة الفاتورة الأساسية
 // ── MESSAGE TEMPLATES ──
 const TPL_KEY='elec_v4_tpl';
-const DEFAULT_TPL_NORMAL=`مشتركنا العزيز {name} :
+const DEFAULT_TPL_NORMAL=`مشتركنا العزيز {name}،
 القراءة السابقة : {prev}
 القراءة الحالية : {curr}
 الاستهلاك : {cons} ك.و.س
-{accumulatedLine}
-المبلغ المستحق : {owed} ₪
+{accumulatedLine}المبلغ المستحق : {owed} ₪
 
-يرجى السداد في أقرب وقت ممكن`;
+يرجى السداد في أقرب وقت ممكن ⚘`;
+
 const DEFAULT_TPL_REMINDER=`مشتركنا العزيز {name} ،
 
 نذكّركم بوجود مبالغ مستحقة غير مسددة:
@@ -1511,11 +1653,20 @@ function buildNormalMsg(s) {
   const invs=s.invoices||[];
   const last=invs.length?invs[invs.length-1]:null;
   const owed=subOwed(s);
+  const credit=subCredit(s);
   if(!last) return `مشتركنا العزيز ${s.name} :\nلا توجد فواتير.`;
   const lb=calcInv(last,p);
   const unpaidN=invs.filter(i=>!i.paid).length;
-  const accumulated=owed-lb.amt;
-  const accumulatedLine = unpaidN>1 ? `المتراكم : ${accumulated.toFixed(2)} ₪` : '';
+  const rawOwed=(invs).reduce((a,i)=>{const amt=calcInv(i,p).amt;return a+(amt-invPaidAmt(i,p));},0);
+  const accumulated=rawOwed-lb.amt; // المتأخر من فواتير سابقة بدون الحالية
+
+  let accumulatedLine='';
+  if(credit>0){
+    accumulatedLine=`له رصيد : −${credit.toFixed(2)} ₪\n`;
+  } else if(unpaidN>1 && accumulated>0){
+    accumulatedLine=`المتأخر : ${accumulated.toFixed(2)} ₪\n`;
+  }
+
   return fillTpl(getTpl('normal'),{
     name:s.name,
     prev:last.prevReading,
@@ -1523,7 +1674,7 @@ function buildNormalMsg(s) {
     cons:lb.cons.toFixed(2),
     week:last.week,
     owed:owed.toFixed(2),
-    accumulated:accumulated.toFixed(2),
+    accumulated:credit>0?`−${credit.toFixed(2)}`:accumulated.toFixed(2),
     accumulatedLine:accumulatedLine
   });
 }
@@ -1926,7 +2077,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-14-13';
+const APP_VERSION = '2026-06-14-15';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
