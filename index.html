@@ -417,6 +417,37 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <button class="btn-sec" onclick="doLogout()">تسجيل الخروج</button>
     </div>
 
+    <!-- RESET PASSWORD (من رابط البريد) -->
+    <div id="auth-reset" style="display:none;">
+      <div class="auth-logo">🔐</div>
+      <div class="auth-title">تعيين كلمة مرور جديدة</div>
+      <div class="auth-sub">أدخل كلمة المرور الجديدة</div>
+      <div class="auth-err" id="reset-err"></div>
+      <div class="auth-msg" id="reset-msg"></div>
+      <div class="fg">
+        <label class="fl">كلمة المرور الجديدة</label>
+        <div class="pw-wrap">
+          <input type="password" class="fc" id="reset-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doReset()">
+          <button class="pw-eye" type="button" onclick="togglePw('reset-pass',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">تأكيد كلمة المرور</label>
+        <div class="pw-wrap">
+          <input type="password" class="fc" id="reset-confirm" placeholder="••••••••" onkeydown="if(event.key==='Enter')doReset()">
+          <button class="pw-eye" type="button" onclick="togglePw('reset-confirm',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-main" onclick="doReset()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15" style="margin-left:6px;"><polyline points="20 6 9 17 4 12"/></svg>
+        حفظ كلمة المرور الجديدة
+      </button>
+    </div>
+
     <!-- REJECTED -->
     <div id="auth-rejected" style="display:none;" class="pending-box">
       <div class="pending-ico">🚫</div>
@@ -888,7 +919,7 @@ function showAuth(which){
   }
   loading.style.display='none';
   box.style.display='block';
-  ['auth-login','auth-signup','auth-pending','auth-rejected','auth-forgot'].forEach(id=>{
+  ['auth-login','auth-signup','auth-pending','auth-rejected','auth-forgot','auth-reset'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display=(id==='auth-'+which)?'block':'none';
   });
@@ -900,6 +931,52 @@ function togglePw(inputId,btn){
   btn.innerHTML=show
     ?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
     :`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+// ── كشف رابط إعادة تعيين كلمة المرور من البريد ──
+let resetOobCode = null;
+(function checkResetUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const oobCode = params.get('oobCode');
+  if(mode === 'resetPassword' && oobCode){
+    resetOobCode = oobCode;
+    // تحقق من صلاحية الكود أولاً
+    auth.verifyPasswordResetCode(oobCode).then(email=>{
+      showAuth('reset');
+      document.getElementById('reset-err').classList.remove('show');
+      document.getElementById('auth-reset').querySelector('.auth-sub').textContent =
+        `تعيين كلمة مرور جديدة للحساب: ${email}`;
+    }).catch(()=>{
+      showAuth('login');
+      const e=document.getElementById('login-err');
+      e.textContent='رابط الاستعادة منتهي الصلاحية أو غير صحيح. أرسل طلباً جديداً.';
+      e.classList.add('show');
+    });
+  }
+})();
+
+function doReset(){
+  const errEl=document.getElementById('reset-err');
+  const msgEl=document.getElementById('reset-msg');
+  errEl.classList.remove('show');msgEl.classList.remove('show');
+  const pass=document.getElementById('reset-pass').value;
+  const confirm=document.getElementById('reset-confirm').value;
+  if(pass.length<6){errEl.textContent='كلمة المرور يجب أن تكون 6 أحرف على الأقل';errEl.classList.add('show');return;}
+  if(pass!==confirm){errEl.textContent='كلمة المرور وتأكيدها غير متطابقين';errEl.classList.add('show');return;}
+  if(!resetOobCode){errEl.textContent='رابط الاستعادة غير صالح';errEl.classList.add('show');return;}
+  auth.confirmPasswordReset(resetOobCode,pass).then(()=>{
+    msgEl.textContent='✅ تم تغيير كلمة المرور بنجاح';
+    msgEl.classList.add('show');
+    resetOobCode=null;
+    // مسح الـ URL وإعادة التوجيه لتسجيل الدخول بعد ثانيتين
+    setTimeout(()=>{
+      window.history.replaceState({},'',window.location.pathname);
+      showAuth('login');
+    },2000);
+  }).catch(e=>{
+    errEl.textContent=e.code==='auth/expired-action-code'?'رابط الاستعادة منتهي الصلاحية':'حدث خطأ، حاول مجدداً';
+    errEl.classList.add('show');
+  });
 }
 function doForgot(){
   const errEl=document.getElementById('forgot-err');
@@ -2077,7 +2154,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-15-1';
+const APP_VERSION = '2026-06-15-2';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
