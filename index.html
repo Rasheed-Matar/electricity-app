@@ -1253,9 +1253,7 @@ function getCurrentWeekBounds(){return getWeekBounds(new Date());}
 function fmtDateAr(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'short'});}
 function fmtDateFull(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'long',year:'numeric'});}
 function invInWeek(inv,fri,thu){
-  if(!inv.week)return false;
-  // الفاتورة لها تاريخ مخزن من weekLabelFromDate (نحتاج dateISO)
-  const dt=inv.weekDate?new Date(inv.weekDate):null;
+  const dt=invDate(inv);
   if(!dt)return false;
   return dt>=fri&&dt<=thu;
 }
@@ -1265,10 +1263,8 @@ function getWeekInvoices(fri,thu){
   const res=[];
   subs.filter(s=>!s.archived).forEach(s=>{
     (s.invoices||[]).forEach(inv=>{
-      if(inv.weekDate){
-        const dt=new Date(inv.weekDate);
-        if(dt>=fri&&dt<=thu)res.push({s,inv});
-      }
+      const dt=invDate(inv);
+      if(dt&&dt>=fri&&dt<=thu)res.push({s,inv});
     });
   });
   return res;
@@ -1279,16 +1275,18 @@ function calcWeekStats(fri,thu){
   const rows=getWeekInvoices(fri,thu);
   let totalAmt=0,paidAmt=0,cons=0,count=0;
   const paidSubs=new Set(),dueSubs=new Set();
+  const weekSubIds=new Set();
   rows.forEach(({s,inv})=>{
     const ib=calcInv(inv,price(s));
     totalAmt+=ib.amt;
     cons+=ib.cons;
     count++;
+    weekSubIds.add(s.id);
     if(inv.paid){paidAmt+=ib.amt;paidSubs.add(s.id);}
     else{const pa=inv.paidAmount||0;paidAmt+=pa;dueSubs.add(s.id);}
   });
-  // إضافة الأرصدة الدائنة للمحصّل (محاسبة صحيحة)
-  const creditTotal=subs.filter(s=>!s.archived).reduce((a,s)=>a+subCredit(s),0);
+  // إضافة الأرصدة الدائنة فقط للمشتركين الذين لديهم فواتير في هذا الأسبوع
+  const creditTotal=subs.filter(s=>!s.archived&&weekSubIds.has(s.id)).reduce((a,s)=>a+subCredit(s),0);
   return {totalAmt,paidAmt:paidAmt+creditTotal,remain:totalAmt-paidAmt,cons,count,paidN:paidSubs.size,dueN:dueSubs.size,rows};
 }
 
@@ -1298,13 +1296,21 @@ function weekLabel(fri,weekNum){
   return `الأسبوع ${weekNum} — ${monthName}`;
 }
 
+// استخراج تاريخ الفاتورة: weekDate أولاً، ثم id كـ timestamp
+function invDate(inv){
+  if(inv.weekDate) return new Date(inv.weekDate+'T00:00:00');
+  if(inv.id && /^\d{10,}$/.test(inv.id)) return new Date(parseInt(inv.id));
+  return null;
+}
+
 // جميع الأسابيع التي يوجد فيها فواتير مرتبة تنازلياً
 function getAllWeeks(){
   const weekMap={};
   subs.filter(s=>!s.archived).forEach(s=>{
     (s.invoices||[]).forEach(inv=>{
-      if(!inv.weekDate)return;
-      const {fri,thu}=getWeekBounds(new Date(inv.weekDate));
+      const dt=invDate(inv);
+      if(!dt)return;
+      const {fri,thu}=getWeekBounds(dt);
       const key=fri.toISOString().split('T')[0];
       if(!weekMap[key])weekMap[key]={fri,thu,key};
     });
@@ -1357,7 +1363,7 @@ function renderDash(){
     const credit=subCredit(s);
     let amtTxt,amtColor;
     if(inv.paid){amtTxt='✅ مسدد';amtColor='var(--green)';}
-    else if(credit>0){amtTxt=`−${credit.toFixed(2)} ₪`;amtColor='var(--green)';}
+    else if(credit>0){amtTxt=`<span style="direction:ltr;unicode-bidi:isolate;display:inline-block;">−${credit.toFixed(2)} ₪</span>`;amtColor='var(--green)';}
     else{amtTxt=ib.amt.toFixed(2)+' ₪';amtColor='var(--amber)';}
     return `<div class="rc-row" onclick="openSubDetails('${s.id}')" style="cursor:pointer;">
       <div class="rc-av">${ini(s.name)}</div>
@@ -1427,7 +1433,7 @@ function renderWeekDetail(stats,w){
     const credit=subCredit(s);
     let statusHtml;
     if(inv.paid) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">✅ مسدد</span>`;
-    else if(credit>0) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">💳 رصيد −${credit.toFixed(2)}</span>`;
+    else if(credit>0) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">💳 رصيد <span style="direction:ltr;unicode-bidi:isolate;display:inline-block;">−${credit.toFixed(2)}</span></span>`;
     else statusHtml=`<span class="wc-sub-status" style="background:var(--red-bg);color:var(--red);">⏳ ${ib.amt.toFixed(2)} ₪</span>`;
     return `<div class="wc-sub-row">
       <div class="rc-av" style="width:30px;height:30px;font-size:11px;">${ini(s.name)}</div>
@@ -1519,7 +1525,7 @@ function renderSubDetails(){
       if(credit>0){
         totalRow+=`<div class="sc-total" style="background:var(--green-bg);">
           <span class="sc-total-lbl" style="color:var(--green);font-weight:700;">💳 رصيد دائن</span>
-          <span class="sc-total-val" style="color:var(--green);">−${credit.toFixed(2)} ₪</span>
+          <span class="sc-total-val" style="color:var(--green);direction:ltr;unicode-bidi:isolate;">−${credit.toFixed(2)} ₪</span>
         </div>`;
       }
     } else if(invs.length>0){
@@ -1527,7 +1533,7 @@ function renderSubDetails(){
       if(credit>0){
         totalRow=`<div class="sc-total" style="background:var(--green-bg);">
           <span class="sc-total-lbl" style="color:var(--green);font-weight:700;">💳 رصيد دائن (له)</span>
-          <span class="sc-total-val" style="color:var(--green);">−${credit.toFixed(2)} ₪</span>
+          <span class="sc-total-val" style="color:var(--green);direction:ltr;unicode-bidi:isolate;">−${credit.toFixed(2)} ₪</span>
         </div>`;
       } else {
         totalRow=`<div class="sc-total" style="background:var(--green-bg);">
@@ -1867,7 +1873,8 @@ function openEdit(id){
             <input type="checkbox" id="ei-paid-${i}" ${inv.paid?'checked':''} style="width:16px;height:16px;"> مدفوعة
           </label>
         </div>
-        <div class="fg"><input type="text" class="fc" id="ei-week-${i}" value="${inv.week}" placeholder="الأسبوع"></div>
+        <div class="fg"><input type="text" class="fc" id="ei-week-${i}" value="${inv.week}" placeholder="الأسبوع" style="display:none;"></div>
+        <div class="fg"><label class="fl" style="font-size:11px;">تاريخ الفاتورة</label><input type="date" class="fc" id="ei-wdate-${i}" value="${inv.weekDate||''}"></div>
         <div class="frow">
           <div class="fg"><input type="number" class="fc" id="ei-prev-${i}" value="${inv.prevReading}" placeholder="القراءة السابقة"></div>
           <div class="fg"><input type="number" class="fc" id="ei-curr-${i}" value="${inv.currReading}" placeholder="القراءة الحالية"></div>
@@ -1885,7 +1892,13 @@ function saveEdit(){
   (s.invoices||[]).forEach((inv,i)=>{
     const wk=document.getElementById('ei-week-'+i);
     if(!wk)return;
-    inv.week=wk.value.trim();
+    const wdateEl=document.getElementById('ei-wdate-'+i);
+    if(wdateEl&&wdateEl.value){
+      inv.weekDate=wdateEl.value;
+      inv.week=weekLabelFromDate(wdateEl.value);
+    } else {
+      inv.week=wk.value.trim();
+    }
     inv.prevReading=parseFloat(document.getElementById('ei-prev-'+i).value||'0');
     inv.currReading=parseFloat(document.getElementById('ei-curr-'+i).value||'0');
     inv.paid=document.getElementById('ei-paid-'+i).checked;
