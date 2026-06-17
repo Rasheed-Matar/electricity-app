@@ -84,6 +84,10 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .bstat:last-child{border-left:none;}
 .bstat-n{font-size:19px;font-weight:800;color:#fff;line-height:1;}
 .bstat-n.gold{color:var(--gold-light);}
+.c-green{color:var(--green)!important;}
+.c-red{color:var(--red)!important;}
+.c-navy{color:var(--navy)!important;}
+.gold{color:var(--gold)!important;}
 .bstat-n.red{color:#ff9f9f;}
 .bstat-n.green{color:#9affd8;}
 .bstat-l{font-size:10px;color:rgba(255,255,255,0.5);margin-top:3px;}
@@ -267,6 +271,49 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 .sms-type-btn{background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:14px 10px;cursor:pointer;font-family:'Tajawal',sans-serif;color:var(--text2);text-align:center;transition:all .2s;}
 .sms-type-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
 .sec-hdr{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:9px;padding-right:3px;}
+
+/* ── WEEK HEADER ── */
+.week-header{background:linear-gradient(135deg,var(--navy-dark),var(--navy));border-radius:var(--r);padding:14px 16px;margin-bottom:12px;color:#fff;}
+.week-header-title{font-size:12px;opacity:.75;margin-bottom:2px;}
+.week-header-name{font-size:17px;font-weight:800;}
+.week-header-dates{font-size:11px;opacity:.7;margin-top:3px;}
+
+/* ── WEEK PROGRESS ── */
+.week-progress{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh);}
+.wp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.wp-label{font-size:12px;color:var(--text2);font-weight:600;}
+.wp-pct{font-size:14px;font-weight:800;color:var(--navy);}
+.wp-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.wp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),#00d9a3);transition:width .5s;}
+.wp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.wp-stat{text-align:center;}
+.wp-stat-n{font-size:15px;font-weight:800;}
+.wp-stat-l{font-size:10px;color:var(--text2);}
+
+/* ── REPORTS ── */
+.month-block{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh);}
+.month-title{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.week-card{border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .2s,background .2s;}
+.week-card:hover{border-color:var(--navy);background:var(--bg);}
+.week-card.active{border-color:var(--navy);background:rgba(26,58,92,.04);}
+.wc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.wc-name{font-size:13px;font-weight:700;color:var(--navy);}
+.wc-dates{font-size:11px;color:var(--text2);}
+.wc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.wc-stat{text-align:center;background:var(--bg);border-radius:8px;padding:6px 4px;}
+.wc-stat-n{font-size:12px;font-weight:800;}
+.wc-stat-l{font-size:9px;color:var(--text2);margin-top:1px;}
+.wc-detail{display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
+.wc-detail.open{display:block;}
+.wc-sub-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.wc-sub-row:last-child{border-bottom:none;}
+.wc-sub-name{flex:1;font-size:13px;font-weight:600;}
+.wc-sub-cons{font-size:11px;color:var(--text2);}
+.wc-sub-amt{font-size:13px;font-weight:800;}
+.wc-sub-status{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700;}
+.wc-export{margin-top:10px;}
+.no-weeks{text-align:center;color:var(--text3);padding:30px 0;}
+.no-weeks-ico{font-size:36px;margin-bottom:8px;}
 
 /* recent compact list */
 .recent-compact{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
@@ -511,6 +558,10 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
     رسائل
   </button>
+  <button class="tab" onclick="sw('reports')" id="tab-reports">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    تقارير
+  </button>
 </div>
 
 <!-- Main content area -->
@@ -519,28 +570,15 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
 
 <!-- ══ DASHBOARD ══ -->
 <div class="scr on" id="scr-dash">
-  <div class="dash-grid">
-    <div class="dcard">
-      <div class="dcard-lbl">💰 إجمالي المطلوب</div>
-      <div class="dcard-val gold" id="d-total-owed">0 ₪</div>
-      <div class="dcard-sub">من جميع الفواتير</div>
-    </div>
-    <div class="dcard">
-      <div class="dcard-lbl">✅ إجمالي المحصّل</div>
-      <div class="dcard-val green" id="d-total-paid">0 ₪</div>
-      <div class="dcard-sub">فواتير مدفوعة</div>
-    </div>
-    <div class="dcard">
-      <div class="dcard-lbl">⏳ المتبقي للتحصيل</div>
-      <div class="dcard-val red" id="d-total-remain">0 ₪</div>
-      <div class="dcard-sub">فواتير معلقة</div>
-    </div>
-    <div class="dcard">
-      <div class="dcard-lbl">⚡ إجمالي الاستهلاك</div>
-      <div class="dcard-val navy" id="d-total-kwh">0</div>
-      <div class="dcard-sub">ك.و.س لكل المشتركين</div>
-    </div>
-  </div>
+
+  <!-- الأسبوع الحالي -->
+  <div class="week-header" id="dash-week-header"></div>
+
+  <!-- إحصائيات الأسبوع -->
+  <div class="dash-grid" id="dash-week-stats"></div>
+
+  <!-- تقدم الأسبوع -->
+  <div class="week-progress" id="dash-week-progress"></div>
 
   <div class="price-cfg">
     <h3>⚡ سعر الكيلوواط الافتراضي</h3>
@@ -553,8 +591,13 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     </div>
   </div>
 
-  <div class="sec-hdr">⚡ آخر المشتركين</div>
+  <div class="sec-hdr">👥 مشتركو هذا الأسبوع</div>
   <div id="dash-recent" class="recent-compact"></div>
+</div>
+
+<!-- ══ REPORTS ══ -->
+<div class="scr" id="scr-reports">
+  <div id="reports-content"></div>
 </div>
 
 <!-- ══ SUBSCRIBERS ══ -->
@@ -1161,7 +1204,12 @@ function enterApp(user,data){
 
 // ── PRICES & CALCS ──
 function price(s){return(s.customPrice&&s.customPrice>0)?s.customPrice:gp;}
-function calcInv(inv,p){const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));const cR=Math.round(c*100)/100;return{cons:cR,amt:Math.ceil(cR*p)};}
+function calcInv(inv,p){
+  const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
+  const cR=Math.round(c*100)/100; // الاستهلاك بمنزلتين عشريتين
+  const amt=parseFloat((cR*p).toFixed(2)); // المبلغ بمنزلتين عشريتين بدون تقريب للأعلى
+  return{cons:cR,amt};
+}
 function invPaidAmt(inv,p){const amt=calcInv(inv,p).amt;if(inv.paid)return amt;return Math.min(inv.paidAmount||0,amt);}
 function subCredit(s){return Math.max(0,s.credit||0);}
 function subOwed(s){
@@ -1169,7 +1217,12 @@ function subOwed(s){
   const rawOwed=(s.invoices||[]).reduce((a,i)=>{const amt=calcInv(i,p).amt;return a+(amt-invPaidAmt(i,p));},0);
   return Math.max(0, rawOwed - subCredit(s));
 }
-function subPaidAmt(s){const p=price(s);return(s.invoices||[]).reduce((a,i)=>a+invPaidAmt(i,p),0);}
+// المحصّل الفعلي = ما دُفع + الرصيد الدائن (لأنه مال مدفوع فعلاً)
+function subPaidAmt(s){
+  const p=price(s);
+  const paid=(s.invoices||[]).reduce((a,i)=>a+invPaidAmt(i,p),0);
+  return paid+subCredit(s);
+}
 function subTotalAmt(s){return(s.invoices||[]).reduce((a,i)=>a+calcInv(i,price(s)).amt,0);}
 
 // ── HEADER & DASHBOARD ──
@@ -1186,32 +1239,218 @@ function updHeader(){
   document.getElementById('gPriceNote').textContent=gp;
 }
 
+// ══ WEEK CALCULATION (الجمعة → الخميس) ══
+function getWeekBounds(date){
+  const d=new Date(date);
+  const day=d.getDay(); // 0=Sun,5=Fri,6=Sat
+  // أقرب جمعة سابقة أو اليوم نفسه
+  const diff=(day>=5)?(day-5):(day+2);
+  const fri=new Date(d);fri.setDate(d.getDate()-diff);fri.setHours(0,0,0,0);
+  const thu=new Date(fri);thu.setDate(fri.getDate()+6);thu.setHours(23,59,59,999);
+  return {fri,thu};
+}
+function getCurrentWeekBounds(){return getWeekBounds(new Date());}
+function fmtDateAr(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'short'});}
+function fmtDateFull(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'long',year:'numeric'});}
+function invInWeek(inv,fri,thu){
+  if(!inv.week)return false;
+  // الفاتورة لها تاريخ مخزن من weekLabelFromDate (نحتاج dateISO)
+  const dt=inv.weekDate?new Date(inv.weekDate):null;
+  if(!dt)return false;
+  return dt>=fri&&dt<=thu;
+}
+
+// جلب فواتير الأسبوع من جميع المشتركين
+function getWeekInvoices(fri,thu){
+  const res=[];
+  subs.filter(s=>!s.archived).forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      if(inv.weekDate){
+        const dt=new Date(inv.weekDate);
+        if(dt>=fri&&dt<=thu)res.push({s,inv});
+      }
+    });
+  });
+  return res;
+}
+
+// إحصائيات أسبوع
+function calcWeekStats(fri,thu){
+  const rows=getWeekInvoices(fri,thu);
+  let totalAmt=0,paidAmt=0,cons=0,count=0;
+  const paidSubs=new Set(),dueSubs=new Set();
+  rows.forEach(({s,inv})=>{
+    const ib=calcInv(inv,price(s));
+    totalAmt+=ib.amt;
+    cons+=ib.cons;
+    count++;
+    if(inv.paid){paidAmt+=ib.amt;paidSubs.add(s.id);}
+    else{const pa=inv.paidAmount||0;paidAmt+=pa;dueSubs.add(s.id);}
+  });
+  // إضافة الأرصدة الدائنة للمحصّل (محاسبة صحيحة)
+  const creditTotal=subs.filter(s=>!s.archived).reduce((a,s)=>a+subCredit(s),0);
+  return {totalAmt,paidAmt:paidAmt+creditTotal,remain:totalAmt-paidAmt,cons,count,paidN:paidSubs.size,dueN:dueSubs.size,rows};
+}
+
+// تسمية الأسبوع ضمن الشهر
+function weekLabel(fri,weekNum){
+  const monthName=fri.toLocaleDateString('ar-PS',{month:'long',year:'numeric'});
+  return `الأسبوع ${weekNum} — ${monthName}`;
+}
+
+// جميع الأسابيع التي يوجد فيها فواتير مرتبة تنازلياً
+function getAllWeeks(){
+  const weekMap={};
+  subs.filter(s=>!s.archived).forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      if(!inv.weekDate)return;
+      const {fri,thu}=getWeekBounds(new Date(inv.weekDate));
+      const key=fri.toISOString().split('T')[0];
+      if(!weekMap[key])weekMap[key]={fri,thu,key};
+    });
+  });
+  return Object.values(weekMap).sort((a,b)=>b.fri-a.fri);
+}
+
+// ── DASHBOARD (الأسبوع الحالي) ──
 function renderDash(){
   updHeader();
-  const total=subs.reduce((a,s)=>a+subTotalAmt(s),0);
-  const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
-  const remain=total-paid;
-  const totalKwh=subs.reduce((a,s)=>a+(s.invoices||[]).reduce((b,i)=>b+calcInv(i,price(s)).cons,0),0);
+  const {fri,thu}=getCurrentWeekBounds();
+  const stats=calcWeekStats(fri,thu);
+  const pct=stats.totalAmt>0?Math.round(stats.paidAmt/stats.totalAmt*100):0;
 
-  document.getElementById('d-total-owed').textContent=total.toFixed(2)+' ₪';
-  document.getElementById('d-total-paid').textContent=paid.toFixed(2)+' ₪';
-  document.getElementById('d-total-remain').textContent=remain.toFixed(2)+' ₪';
-  document.getElementById('d-total-kwh').textContent=totalKwh.toFixed(0);
+  // عنوان الأسبوع
+  document.getElementById('dash-week-header').innerHTML=`
+    <div class="week-header">
+      <div class="week-header-title">📅 الأسبوع الحالي</div>
+      <div class="week-header-name">الجمعة ${fmtDateAr(fri)} — الخميس ${fmtDateAr(thu)}</div>
+      <div class="week-header-dates">${fmtDateFull(new Date())}</div>
+    </div>`;
 
-  // recent compact
+  // إحصائيات 4 بطاقات
+  document.getElementById('dash-week-stats').innerHTML=`
+    <div class="dcard"><div class="dcard-lbl">💰 إجمالي الأسبوع</div><div class="dcard-val gold">${stats.totalAmt.toFixed(2)} ₪</div><div class="dcard-sub">من ${stats.count} فاتورة</div></div>
+    <div class="dcard"><div class="dcard-lbl">✅ المحصّل</div><div class="dcard-val green">${stats.paidAmt.toFixed(2)} ₪</div><div class="dcard-sub">شامل الأرصدة الدائنة</div></div>
+    <div class="dcard"><div class="dcard-lbl">⏳ المتبقي</div><div class="dcard-val red">${stats.remain.toFixed(2)} ₪</div><div class="dcard-sub">فواتير معلقة</div></div>
+    <div class="dcard"><div class="dcard-lbl">⚡ الاستهلاك</div><div class="dcard-val navy">${stats.cons.toFixed(2)}</div><div class="dcard-sub">ك.و.س هذا الأسبوع</div></div>`;
+
+  // شريط التقدم
+  document.getElementById('dash-week-progress').innerHTML=`
+    <div class="week-progress">
+      <div class="wp-row"><span class="wp-label">نسبة التحصيل</span><span class="wp-pct">${pct}%</span></div>
+      <div class="wp-bar"><div class="wp-fill" style="width:${pct}%"></div></div>
+      <div class="wp-stats">
+        <div class="wp-stat"><div class="wp-stat-n c-green">${stats.paidN}</div><div class="wp-stat-l">سدّدوا</div></div>
+        <div class="wp-stat"><div class="wp-stat-n c-red">${stats.dueN}</div><div class="wp-stat-l">لم يسددوا</div></div>
+        <div class="wp-stat"><div class="wp-stat-n">${stats.count}</div><div class="wp-stat-l">إجمالي الفواتير</div></div>
+      </div>
+    </div>`;
+
+  // مشتركو هذا الأسبوع
   const el=document.getElementById('dash-recent');
-  if(!subs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">👥</div><h3>لا يوجد مشتركون</h3><p>اضغط إضافة لبدء الاستخدام</p></div>`;return;}
-  el.innerHTML=subs.slice(-5).reverse().map(s=>{
-    const owed=subOwed(s);
-    return `<div class="rc-row">
+  if(!stats.rows.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><h3>لا توجد فواتير هذا الأسبوع</h3><p>أضف فواتير باختيار تاريخ ضمن هذا الأسبوع</p></div>`;
+    return;
+  }
+  el.innerHTML=stats.rows.map(({s,inv})=>{
+    const ib=calcInv(inv,price(s));
+    const credit=subCredit(s);
+    let amtTxt,amtColor;
+    if(inv.paid){amtTxt='✅ مسدد';amtColor='var(--green)';}
+    else if(credit>0){amtTxt=`−${credit.toFixed(2)} ₪`;amtColor='var(--green)';}
+    else{amtTxt=ib.amt.toFixed(2)+' ₪';amtColor='var(--amber)';}
+    return `<div class="rc-row" onclick="openSubDetails('${s.id}')" style="cursor:pointer;">
       <div class="rc-av">${ini(s.name)}</div>
       <div class="rc-info"><div class="rc-name">${s.name}</div><div class="rc-phone">${s.phone}</div></div>
-      <span class="rc-amt" style="color:${owed>0?'var(--amber)':'var(--green)'}">
-        ${owed>0?owed.toFixed(2)+' ₪':'✅'}
-        ${subCredit(s)>0?`<span style="font-size:10px;color:var(--green);display:block;">💰 ${subCredit(s).toFixed(2)}</span>`:''}
-      </span>
+      <div style="text-align:left;">
+        <div class="rc-amt" style="color:${amtColor}">${amtTxt}</div>
+        <div style="font-size:10px;color:var(--text3);">${ib.cons.toFixed(2)} ك</div>
+      </div>
     </div>`;
   }).join('');
+}
+
+// ── REPORTS ──
+let openWeekKey=null;
+function renderReports(){
+  const el=document.getElementById('reports-content');
+  const weeks=getAllWeeks();
+  if(!weeks.length){
+    el.innerHTML=`<div class="no-weeks"><div class="no-weeks-ico">📊</div><h3>لا توجد بيانات بعد</h3><p>أضف فواتير لتظهر هنا</p></div>`;
+    return;
+  }
+
+  // تجميع حسب الشهر
+  const monthMap={};
+  weeks.forEach(w=>{
+    const mKey=`${w.fri.getFullYear()}-${w.fri.getMonth()}`;
+    if(!monthMap[mKey])monthMap[mKey]={label:w.fri.toLocaleDateString('ar-PS',{month:'long',year:'numeric'}),weeks:[]};
+    monthMap[mKey].weeks.push(w);
+  });
+
+  el.innerHTML=Object.values(monthMap).map((month,mi)=>{
+    // ترتيب الأسابيع تصاعدياً داخل الشهر
+    const sortedWeeks=[...month.weeks].sort((a,b)=>a.fri-b.fri);
+    return `<div class="month-block">
+      <div class="month-title">📅 ${month.label}</div>
+      ${sortedWeeks.map((w,wi)=>{
+        const stats=calcWeekStats(w.fri,w.thu);
+        const pct=stats.totalAmt>0?Math.round(stats.paidAmt/stats.totalAmt*100):0;
+        const isOpen=openWeekKey===w.key;
+        return `<div class="week-card ${isOpen?'active':''}" onclick="togWeek('${w.key}')">
+          <div class="wc-top">
+            <div>
+              <div class="wc-name">الأسبوع ${wi+1}</div>
+              <div class="wc-dates">جمعة ${fmtDateAr(w.fri)} — خميس ${fmtDateAr(w.thu)}</div>
+            </div>
+            <div style="text-align:left;font-size:13px;font-weight:800;color:${pct>=100?'var(--green)':'var(--amber)'};">${pct}%</div>
+          </div>
+          <div class="wc-stats">
+            <div class="wc-stat"><div class="wc-stat-n gold">${stats.totalAmt.toFixed(0)} ₪</div><div class="wc-stat-l">الإجمالي</div></div>
+            <div class="wc-stat"><div class="wc-stat-n c-green">${stats.paidAmt.toFixed(0)} ₪</div><div class="wc-stat-l">المحصّل</div></div>
+            <div class="wc-stat"><div class="wc-stat-n c-red">${stats.remain.toFixed(0)} ₪</div><div class="wc-stat-l">المتبقي</div></div>
+            <div class="wc-stat"><div class="wc-stat-n">${stats.count}</div><div class="wc-stat-l">فواتير</div></div>
+          </div>
+          <div class="wc-detail ${isOpen?'open':''}" id="week-detail-${w.key}">
+            ${renderWeekDetail(stats,w)}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderWeekDetail(stats,w){
+  if(!stats.rows.length) return '<div style="text-align:center;color:var(--text3);padding:10px;">لا توجد فواتير</div>';
+  const rows=stats.rows.map(({s,inv})=>{
+    const ib=calcInv(inv,price(s));
+    const credit=subCredit(s);
+    let statusHtml;
+    if(inv.paid) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">✅ مسدد</span>`;
+    else if(credit>0) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">💳 رصيد −${credit.toFixed(0)}</span>`;
+    else statusHtml=`<span class="wc-sub-status" style="background:var(--red-bg);color:var(--red);">⏳ ${ib.amt} ₪</span>`;
+    return `<div class="wc-sub-row">
+      <div class="rc-av" style="width:30px;height:30px;font-size:11px;">${ini(s.name)}</div>
+      <div class="wc-sub-name">${s.name}</div>
+      <div class="wc-sub-cons">${ib.cons.toFixed(2)} ك</div>
+      ${statusHtml}
+    </div>`;
+  }).join('');
+  return `${rows}
+    <button class="btn-main" style="margin-top:10px;padding:9px;" onclick="exportWeekPDF('${w.fri.toISOString()}','${w.thu.toISOString()}');event.stopPropagation();">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M14 2H6a2 2 0 00-2 2v16h16V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      تصدير PDF هذا الأسبوع
+    </button>`;
+}
+
+function togWeek(key){
+  openWeekKey=(openWeekKey===key)?null:key;
+  renderReports();
+}
+
+function exportWeekPDF(friISO,thuISO){
+  const fri=new Date(friISO),thu=new Date(thuISO);
+  buildAndExport('weekRange',null,fri,thu);
 }
 
 // ── SUBSCRIBER CARD ──
@@ -1482,30 +1721,27 @@ function confirmPayment(){
   applyPayment(s,amount);
   save();cm('mPay');renderAll();
 }
-// يوزع المبلغ المدفوع على الفواتير المعلقة (الأقدم أولاً) + يحفظ الزائد كرصيد دائن
 function applyPayment(s,amount){
   const p=price(s);
-  // أولاً: استخدم الرصيد الدائن الموجود
   const existingCredit=s.credit||0;
-  let remaining=amount+existingCredit;
-  s.credit=0; // سيُعاد حساب الرصيد بعد التوزيع
+  let remaining=parseFloat((amount+existingCredit).toFixed(2));
+  s.credit=0;
 
   const unpaid=(s.invoices||[]).filter(i=>!i.paid);
   for(const inv of unpaid){
     if(remaining<=0)break;
     const amt=calcInv(inv,p).amt;
-    const already=inv.paidAmount||0;
-    const due=amt-already;
+    const already=parseFloat((inv.paidAmount||0).toFixed(2));
+    const due=parseFloat((amt-already).toFixed(2));
     if(remaining>=due){
       inv.paidAmount=amt;
       inv.paid=true;
-      remaining-=due;
+      remaining=parseFloat((remaining-due).toFixed(2));
     } else {
-      inv.paidAmount=already+remaining;
+      inv.paidAmount=parseFloat((already+remaining).toFixed(2));
       remaining=0;
     }
   }
-  // أي مبلغ زائد يُحفظ كرصيد دائن
   if(remaining>0){
     s.credit=parseFloat(remaining.toFixed(2));
     toast(`✅ تم تسجيل الدفعة — رصيد دائن: ${s.credit.toFixed(2)} ₪`,3500);
@@ -1573,7 +1809,7 @@ function saveInv(){
   const s=subs.find(x=>x.id===invSubId);if(!s)return;
   if(!s.invoices)s.invoices=[];
   const week=weekLabelFromDate(dateVal);
-  s.invoices.push({id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false,notes});
+  s.invoices.push({id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false,notes});
   document.getElementById('inv-notes').value='';
   save();cm('mInv');renderAll();toast(`✅ تمت إضافة الفاتورة لـ ${s.name}`);
 }
@@ -1592,7 +1828,7 @@ function addSub(){
   let cp=null;
   if(pmMode==='custom'){const v=parseFloat(document.getElementById('f-cprice').value);if(!isNaN(v)&&v>0)cp=v;}
   const week=weekLabelFromDate(dateVal);
-  const inv={id:Date.now().toString(),week,prevReading:prev,currReading:curr,paid:false};
+  const inv={id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false};
   subs.push({id:Date.now().toString(),name,phone,customPrice:cp,invoices:[inv]});
   save();
   ['f-name','f-phone','f-prev','f-curr','f-cprice'].forEach(i=>document.getElementById(i).value='');
@@ -1920,12 +2156,14 @@ function saveGP(){
   if(!isNaN(v)&&v>0){gp=v;save();renderAll();toast('✅ تم حفظ السعر');}
 }
 
-function renderAll(){renderDash();renderSubs();renderPay();renderSMS();}
+function renderAll(){renderDash();renderSubs();renderPay();renderSMS();renderReports();}
 
 function sw(tab){
-  ['dash','subs','pay','add','sms'].forEach(t=>{
-    document.getElementById('scr-'+t).classList.remove('on');
-    document.getElementById('tab-'+t).classList.remove('on');
+  ['dash','subs','pay','add','sms','reports'].forEach(t=>{
+    const s=document.getElementById('scr-'+t);
+    const tb=document.getElementById('tab-'+t);
+    if(s)s.classList.remove('on');
+    if(tb)tb.classList.remove('on');
   });
   document.getElementById('scr-'+tab).classList.add('on');
   document.getElementById('tab-'+tab).classList.add('on');
@@ -1933,6 +2171,7 @@ function sw(tab){
   else if(tab==='subs')renderSubs();
   else if(tab==='pay')renderPay();
   else if(tab==='sms')renderSMS();
+  else if(tab==='reports')renderReports();
 }
 
 // ── PDF EXPORT ──
@@ -2028,11 +2267,11 @@ function exportSubPDF(){
   },100);
 }
 
-function buildAndExport(mode,week){
+function buildAndExport(mode,week,friBound,thuBound){
   let rows=[],title='',totalAmt=0,totalCons=0;
   if(mode==='all'){
     title='قائمة جميع المشتركين';
-    subs.forEach(s=>{
+    subs.filter(s=>!s.archived).forEach(s=>{
       const owed=subOwed(s),tot=subTotalAmt(s);
       const invs=s.invoices||[];
       const last=invs.length?invs[invs.length-1]:null;
@@ -2042,7 +2281,7 @@ function buildAndExport(mode,week){
     });
   } else if(mode==='due'){
     title='المشتركون غير المسددين';
-    subs.filter(s=>subOwed(s)>0).forEach(s=>{
+    subs.filter(s=>!s.archived&&subOwed(s)>0).forEach(s=>{
       const owed=subOwed(s);
       const invs=s.invoices||[];
       const last=invs.length?invs[invs.length-1]:null;
@@ -2052,7 +2291,7 @@ function buildAndExport(mode,week){
     });
   } else if(mode==='paid'){
     title='المشتركون المسددون';
-    subs.filter(s=>subOwed(s)===0&&(s.invoices||[]).length>0).forEach(s=>{
+    subs.filter(s=>!s.archived&&subOwed(s)===0&&(s.invoices||[]).length>0).forEach(s=>{
       const tot=subTotalAmt(s);
       const invs=s.invoices||[];
       const last=invs[invs.length-1];
@@ -2062,12 +2301,25 @@ function buildAndExport(mode,week){
     });
   } else if(mode==='week'){
     title=`فواتير ${week}`;
-    subs.forEach(s=>{
+    subs.filter(s=>!s.archived).forEach(s=>{
       const inv=(s.invoices||[]).find(i=>i.week===week);
       if(!inv)return;
       const ib=calcInv(inv,price(s));
       totalAmt+=ib.amt;totalCons+=ib.cons;
       rows.push({name:s.name,phone:s.phone,prev:inv.prevReading,curr:inv.currReading,cons:ib.cons.toFixed(2),amt:ib.amt.toFixed(2),status:inv.paid?'مسدد':'غير مسدد'});
+    });
+  } else if(mode==='weekRange'){
+    const fri=friBound,thu=thuBound;
+    title=`أسبوع ${fmtDateAr(fri)} — ${fmtDateAr(thu)}`;
+    const weekRows=getWeekInvoices(fri,thu);
+    weekRows.forEach(({s,inv})=>{
+      const ib=calcInv(inv,price(s));
+      const credit=subCredit(s);
+      totalAmt+=ib.amt;totalCons+=ib.cons;
+      let amtDisplay=ib.amt.toFixed(2);
+      let status=inv.paid?'مسدد':'غير مسدد';
+      if(!inv.paid&&credit>0){status=`رصيد دائن −${credit.toFixed(2)}`;}
+      rows.push({name:s.name,phone:s.phone,prev:inv.prevReading,curr:inv.currReading,cons:ib.cons.toFixed(2),amt:amtDisplay,status});
     });
   }
   if(!rows.length){toast('⚠️ لا توجد بيانات لهذا التصدير');return;}
@@ -2154,7 +2406,7 @@ function downloadCurrentPdf(){
 
 
 // ── إصدار التطبيق ──
-const APP_VERSION = '2026-06-15-2';
+const APP_VERSION = '2026-06-15-4';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
