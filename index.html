@@ -1231,9 +1231,9 @@ function updHeader(){
   const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
   const remain=subs.reduce((a,s)=>a+subOwed(s),0);
   document.getElementById('bs-total').textContent=subs.length;
-  document.getElementById('bs-owed').textContent=total.toFixed(0);
-  document.getElementById('bs-paid').textContent=paid.toFixed(0);
-  document.getElementById('bs-remain').textContent=remain.toFixed(0);
+  document.getElementById('bs-owed').textContent=total.toFixed(2);
+  document.getElementById('bs-paid').textContent=paid.toFixed(2);
+  document.getElementById('bs-remain').textContent=remain.toFixed(2);
   document.getElementById('hdrDate').textContent=new Date().toLocaleDateString('ar-PS',{day:'numeric',month:'short'});
   document.getElementById('gPrice').value=gp;
   document.getElementById('gPriceNote').textContent=gp;
@@ -1406,9 +1406,9 @@ function renderReports(){
             <div style="text-align:left;font-size:13px;font-weight:800;color:${pct>=100?'var(--green)':'var(--amber)'};">${pct}%</div>
           </div>
           <div class="wc-stats">
-            <div class="wc-stat"><div class="wc-stat-n gold">${stats.totalAmt.toFixed(0)} ₪</div><div class="wc-stat-l">الإجمالي</div></div>
-            <div class="wc-stat"><div class="wc-stat-n c-green">${stats.paidAmt.toFixed(0)} ₪</div><div class="wc-stat-l">المحصّل</div></div>
-            <div class="wc-stat"><div class="wc-stat-n c-red">${stats.remain.toFixed(0)} ₪</div><div class="wc-stat-l">المتبقي</div></div>
+            <div class="wc-stat"><div class="wc-stat-n gold">${stats.totalAmt.toFixed(2)} ₪</div><div class="wc-stat-l">الإجمالي</div></div>
+            <div class="wc-stat"><div class="wc-stat-n c-green">${stats.paidAmt.toFixed(2)} ₪</div><div class="wc-stat-l">المحصّل</div></div>
+            <div class="wc-stat"><div class="wc-stat-n c-red">${stats.remain.toFixed(2)} ₪</div><div class="wc-stat-l">المتبقي</div></div>
             <div class="wc-stat"><div class="wc-stat-n">${stats.count}</div><div class="wc-stat-l">فواتير</div></div>
           </div>
           <div class="wc-detail ${isOpen?'open':''}" id="week-detail-${w.key}">
@@ -1427,8 +1427,8 @@ function renderWeekDetail(stats,w){
     const credit=subCredit(s);
     let statusHtml;
     if(inv.paid) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">✅ مسدد</span>`;
-    else if(credit>0) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">💳 رصيد −${credit.toFixed(0)}</span>`;
-    else statusHtml=`<span class="wc-sub-status" style="background:var(--red-bg);color:var(--red);">⏳ ${ib.amt} ₪</span>`;
+    else if(credit>0) statusHtml=`<span class="wc-sub-status" style="background:var(--green-bg);color:var(--green);">💳 رصيد −${credit.toFixed(2)}</span>`;
+    else statusHtml=`<span class="wc-sub-status" style="background:var(--red-bg);color:var(--red);">⏳ ${ib.amt.toFixed(2)} ₪</span>`;
     return `<div class="wc-sub-row">
       <div class="rc-av" style="width:30px;height:30px;font-size:11px;">${ini(s.name)}</div>
       <div class="wc-sub-name">${s.name}</div>
@@ -1508,7 +1508,7 @@ function renderSubDetails(){
     </div>
     <div class="sc-total">
       <span class="sc-total-lbl">آخر فاتورة — ${last.week}</span>
-      <span class="sc-total-val" style="color:${last.paid?'var(--green)':'var(--amber)'}">${lb.amt} ₪</span>
+      <span class="sc-total-val" style="color:${last.paid?'var(--green)':'var(--amber)'}">${lb.amt.toFixed(2)} ₪</span>
     </div>`;
     if(owed>0){
       const credit=subCredit(s);
@@ -1558,7 +1558,7 @@ function renderSubDetails(){
             ${inv.notes?`<div style="font-size:11px;color:var(--text2);margin-top:2px;">📝 ${inv.notes}</div>`:''}
             ${inv.paidAmount>0&&!inv.paid?`<div style="font-size:11px;color:var(--green);">دُفع جزئياً: ${inv.paidAmount.toFixed(2)} ₪</div>`:''}
           </div>
-          <span class="inv-amt ${inv.paid?'paid':'due'}">${ib.amt} ₪</span>
+          <span class="inv-amt ${inv.paid?'paid':'due'}">${ib.amt.toFixed(2)} ₪</span>
           ${!inv.paid
             ?`<button class="ipay-btn" onclick="payInv('${s.id}',${ii});renderSubDetails();">دفع ✓</button>`
             :`<button class="ipay-btn" style="background:var(--amber);" onclick="undoPayInv('${s.id}',${ii});renderSubDetails();">↺ إلغاء</button>`
@@ -1687,7 +1687,7 @@ function renderPay(){
           return `<div class="pi-row">
             <span class="pi-week">${inv.week}</span>
             <span style="font-size:11px;color:var(--text2);">${ib.cons.toFixed(2)} ك.و.س</span>
-            <span class="pi-amt" style="color:var(--green);">${ib.amt} ₪</span>
+            <span class="pi-amt" style="color:var(--green);">${ib.amt.toFixed(2)} ₪</span>
             <span class="pi-paid-lbl">✓ مدفوع</span>
           </div>`;
         }).join('')}
@@ -2231,7 +2231,7 @@ function exportSubPDF(){
             <td style="padding:7px 6px;text-align:center;">${inv.prevReading}</td>
             <td style="padding:7px 6px;text-align:center;">${inv.currReading}</td>
             <td style="padding:7px 6px;text-align:center;">${ib.cons.toFixed(2)}</td>
-            <td style="padding:7px 6px;text-align:center;font-weight:700;">${ib.amt} ₪</td>
+            <td style="padding:7px 6px;text-align:center;font-weight:700;">${ib.amt.toFixed(2)} ₪</td>
             <td style="padding:7px 6px;text-align:center;font-weight:700;color:${inv.paid?'#00b894':'#e17055'};">${inv.paid?'مسدد':'غير مسدد'}</td>
           </tr>`;
         }).join('')}
