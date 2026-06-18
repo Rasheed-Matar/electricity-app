@@ -1227,9 +1227,9 @@ function subTotalAmt(s){return(s.invoices||[]).reduce((a,i)=>a+calcInv(i,price(s
 
 // ── HEADER & DASHBOARD ──
 function updHeader(){
-  const total=subs.reduce((a,s)=>a+subTotalAmt(s),0);
-  const paid=subs.reduce((a,s)=>a+subPaidAmt(s),0);
-  const remain=subs.reduce((a,s)=>a+subOwed(s),0);
+  const total=parseFloat(subs.reduce((a,s)=>a+subTotalAmt(s),0).toFixed(2));
+  const paid=parseFloat(subs.reduce((a,s)=>a+subPaidAmt(s),0).toFixed(2));
+  const remain=parseFloat(Math.max(0,total-paid).toFixed(2));
   document.getElementById('bs-total').textContent=subs.length;
   document.getElementById('bs-owed').textContent=total.toFixed(2);
   document.getElementById('bs-paid').textContent=paid.toFixed(2);
