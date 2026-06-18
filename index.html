@@ -1250,6 +1250,11 @@ function getWeekBounds(date){
   return {fri,thu};
 }
 function getCurrentWeekBounds(){return getWeekBounds(new Date());}
+function getPrevWeekBounds(){
+  const d=new Date();
+  d.setDate(d.getDate()-7);
+  return getWeekBounds(d);
+}
 function fmtDateAr(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'short'});}
 function fmtDateFull(d){return d.toLocaleDateString('ar-PS',{day:'numeric',month:'long',year:'numeric'});}
 function invInWeek(inv,fri,thu){
@@ -1325,16 +1330,18 @@ function getAllWeeks(){
 // ── DASHBOARD (الأسبوع الحالي) ──
 function renderDash(){
   updHeader();
-  const {fri,thu}=getCurrentWeekBounds();
+  // اللوحة تعرض الأسبوع الماضي دائماً لأن التحصيل يكون بعد انتهاء أسبوع الاستهلاك
+  const {fri,thu}=getPrevWeekBounds();
+  const {fri:cFri,thu:cThu}=getCurrentWeekBounds();
   const stats=calcWeekStats(fri,thu);
   const pct=stats.totalAmt>0?Math.round(stats.paidAmt/stats.totalAmt*100):0;
 
   // عنوان الأسبوع
   document.getElementById('dash-week-header').innerHTML=`
     <div class="week-header">
-      <div class="week-header-title">📅 الأسبوع الحالي</div>
+      <div class="week-header-title">📅 أسبوع التحصيل (الأسبوع الماضي)</div>
       <div class="week-header-name">الجمعة ${fmtDateAr(fri)} — الخميس ${fmtDateAr(thu)}</div>
-      <div class="week-header-dates">${fmtDateFull(new Date())}</div>
+      <div class="week-header-dates">${fmtDateFull(new Date())} — أسبوع التسجيل الحالي: ${fmtDateAr(cFri)} — ${fmtDateAr(cThu)}</div>
     </div>`;
 
   // إحصائيات 4 بطاقات
@@ -1359,7 +1366,7 @@ function renderDash(){
   // مشتركو هذا الأسبوع
   const el=document.getElementById('dash-recent');
   if(!stats.rows.length){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><h3>لا توجد فواتير هذا الأسبوع</h3><p>أضف فواتير باختيار تاريخ ضمن هذا الأسبوع</p></div>`;
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div><h3>لا توجد فواتير للأسبوع الماضي</h3><p>الفواتير المسجّلة هذا الأسبوع ستظهر هنا الأسبوع القادم</p></div>`;
     return;
   }
   el.innerHTML=stats.rows.map(({s,inv})=>{
