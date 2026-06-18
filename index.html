@@ -1285,9 +1285,13 @@ function calcWeekStats(fri,thu){
     if(inv.paid){paidAmt+=ib.amt;paidSubs.add(s.id);}
     else{const pa=inv.paidAmount||0;paidAmt+=pa;dueSubs.add(s.id);}
   });
-  // إضافة الأرصدة الدائنة فقط للمشتركين الذين لديهم فواتير في هذا الأسبوع
-  const creditTotal=subs.filter(s=>!s.archived&&weekSubIds.has(s.id)).reduce((a,s)=>a+subCredit(s),0);
-  return {totalAmt,paidAmt:paidAmt+creditTotal,remain:totalAmt-paidAmt,cons,count,paidN:paidSubs.size,dueN:dueSubs.size,rows};
+  // الأرصدة الدائنة للمشتركين الذين لديهم فواتير في هذا الأسبوع
+  const creditTotal=parseFloat(subs.filter(s=>!s.archived&&weekSubIds.has(s.id)).reduce((a,s)=>a+subCredit(s),0).toFixed(2));
+  // المحصّل = ما دُفع فعلاً + الرصيد الدائن المُطبَّق
+  const totalPaid=parseFloat((paidAmt+creditTotal).toFixed(2));
+  // المتبقي = الإجمالي - المحصّل الكامل (شامل الرصيد)
+  const remain=parseFloat(Math.max(0,totalAmt-totalPaid).toFixed(2));
+  return {totalAmt,paidAmt:totalPaid,remain,cons,count,paidN:paidSubs.size,dueN:dueSubs.size,rows};
 }
 
 // تسمية الأسبوع ضمن الشهر
