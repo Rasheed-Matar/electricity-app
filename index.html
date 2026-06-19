@@ -2494,16 +2494,24 @@ try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 // ── PWA INSTALL LOGIC ──
 let deferredPrompt = null;
 
+// هل التطبيق مفتوح حالياً من نسخة مثبَّتة (standalone)؟
+function isAppInstalled(){
+  return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true; // iOS Safari
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  if(!localStorage.getItem('pwa-dismissed')) {
+  // أظهر الشاشة فقط إذا التطبيق غير مثبَّت أصلاً
+  if(!isAppInstalled()) {
     document.getElementById('pwa-install-screen').style.display='flex';
   }
 });
 
 window.addEventListener('appinstalled', () => {
   document.getElementById('pwa-install-screen').style.display='none';
+  localStorage.setItem('pwa-dismissed','1');
   toast('✅ تم تثبيت التطبيق!', 3000);
 });
 
@@ -2518,11 +2526,22 @@ async function triggerPWAInstall(){
     const {outcome} = await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById('pwa-install-screen').style.display='none';
-    if(outcome==='accepted') toast('✅ تم تثبيت التطبيق بنجاح!',3000);
+    if(outcome==='accepted'){
+      localStorage.setItem('pwa-dismissed','1');
+      toast('✅ تم تثبيت التطبيق بنجاح!',3000);
+    }
   } else {
     toast('📱 افتح القائمة ← "إضافة إلى الشاشة الرئيسية"', 4000);
   }
 }
+
+// فحص فوري عند تحميل الصفحة: إذا مثبَّت فعلاً، لا تُظهر الشاشة مهما كان حال pwa-dismissed
+document.addEventListener('DOMContentLoaded', () => {
+  if(isAppInstalled()){
+    document.getElementById('pwa-install-screen').style.display='none';
+    localStorage.setItem('pwa-dismissed','1');
+  }
+});
 
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
 if('serviceWorker' in navigator){
