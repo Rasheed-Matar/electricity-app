@@ -2137,10 +2137,11 @@ function sendBroadcast(){
   const msg = document.getElementById('broadcast-text').value.trim();
   if(!msg){toast('⚠️ اكتب نص التعميم أولاً');return;}
   if(!subs.length){toast('لا يوجد مشتركون!');return;}
-  subs.forEach(s=>{
-    window.open(`https://wa.me/${s.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
-  });
-  toast(`✅ تم فتح واتساب لـ ${subs.length} مشترك`);
+  smsQueue = subs.map(s=>({phone:s.phone,name:s.name,msg}));
+  document.getElementById('sms-edit-target').textContent=`📢 تعميم لـ ${subs.length} مشترك`;
+  document.getElementById('sms-edit-text').value=msg;
+  document.getElementById('sms-send-btn-txt').textContent=`إرسال للجميع (${subs.length})`;
+  document.getElementById('mSms').classList.add('on');
 }
 
 function buildSmsCard(s, type) {
