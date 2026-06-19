@@ -691,6 +691,11 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
       <div style="font-size:13px;font-weight:700;">رسالة تذكير</div>
       <div style="font-size:10px;margin-top:2px;opacity:.75;">للمتأخرين فقط</div>
     </button>
+    <button class="sms-type-btn" id="sms-tab-broadcast" onclick="smsTab('broadcast')" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;">
+      <div style="font-size:18px;margin-bottom:4px;">📢</div>
+      <div style="font-size:13px;font-weight:700;">تعميم</div>
+      <div style="font-size:10px;margin-top:2px;opacity:.75;">رسالة حرة للجميع</div>
+    </button>
   </div>
 
   <!-- SEND ALL — NORMAL -->
@@ -733,6 +738,28 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);ove
     </button>
     <div class="sec-hdr">المتأخرون في الدفع</div>
     <div id="sms-indiv-reminder"></div>
+  </div>
+
+</div>
+
+  <!-- BROADCAST — تعميم -->
+  <div id="sms-block-broadcast" style="display:none;">
+    <div class="sms-banner" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe);">
+      <h3>📢 إرسال تعميم للجميع</h3>
+      <p>رسالة حرة تُرسل لجميع المشتركين عبر واتساب</p>
+      <button class="btn-white" style="color:#6c5ce7;" onclick="sendBroadcast()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        إرسال للجميع (<span id="sms-cnt-broadcast">0</span>)
+      </button>
+    </div>
+    <div class="sms-prev" style="border-right-color:#6c5ce7;">
+      <div class="sms-prev-lbl" style="color:#6c5ce7;">✏️ اكتب رسالتك هنا</div>
+      <textarea id="broadcast-text" rows="6" class="fc" style="width:100%;margin-top:8px;font-family:inherit;font-size:14px;line-height:1.7;resize:vertical;" placeholder="اكتب نص التعميم هنا... مثال: إشعار بانقطاع الكهرباء غداً من الساعة 10 صباحاً حتى 2 ظهراً"></textarea>
+    </div>
+    <div style="padding:0 4px;">
+      <div class="sec-hdr">المشتركون الذين ستصلهم الرسالة</div>
+      <div id="sms-indiv-broadcast"></div>
+    </div>
   </div>
 
 </div>
@@ -1941,9 +1968,14 @@ function setSmsType(t) {
   smsType = t;
   document.getElementById('smsT1').classList.toggle('on', t==='normal');
   document.getElementById('smsT2').classList.toggle('on', t==='reminder');
+  const bc=document.getElementById('sms-tab-broadcast');
+  if(bc) bc.style.opacity = t==='broadcast'?'1':'.7';
   document.getElementById('sms-block-normal').style.display = t==='normal'?'block':'none';
   document.getElementById('sms-block-reminder').style.display = t==='reminder'?'block':'none';
+  const bb=document.getElementById('sms-block-broadcast');
+  if(bb) bb.style.display = t==='broadcast'?'block':'none';
 }
+function smsTab(t){ setSmsType(t); }
 
 // رسالة الفاتورة الأساسية
 // ── MESSAGE TEMPLATES ──
@@ -2083,6 +2115,32 @@ function renderSMS() {
   } else {
     n2.innerHTML = dueSubs.map(s => buildSmsCard(s,'reminder')).join('');
   }
+
+  // broadcast list
+  document.getElementById('sms-cnt-broadcast').textContent = subs.length;
+  const n3 = document.getElementById('sms-indiv-broadcast');
+  if(!subs.length) {
+    n3.innerHTML=`<div class="empty"><div class="empty-ico">📭</div><h3>لا يوجد مشتركون</h3></div>`;
+  } else {
+    n3.innerHTML = subs.map(s=>`
+      <div class="pay-card" style="margin-bottom:8px;">
+        <div class="pay-card-top">
+          <div class="pay-av">${ini(s.name)}</div>
+          <div class="pay-info"><div class="pay-name">${s.name}</div><div class="pay-phone">${s.phone}</div></div>
+          <span style="font-size:11px;color:var(--text3);">سيصله التعميم</span>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function sendBroadcast(){
+  const msg = document.getElementById('broadcast-text').value.trim();
+  if(!msg){toast('⚠️ اكتب نص التعميم أولاً');return;}
+  if(!subs.length){toast('لا يوجد مشتركون!');return;}
+  subs.forEach(s=>{
+    window.open(`https://wa.me/${s.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  });
+  toast(`✅ تم فتح واتساب لـ ${subs.length} مشترك`);
 }
 
 function buildSmsCard(s, type) {
@@ -2433,6 +2491,39 @@ function downloadCurrentPdf(){
 const APP_VERSION = '2026-06-15-4';
 try { localStorage.setItem('elec_app_version', APP_VERSION); } catch(e){}
 
+// ── PWA INSTALL LOGIC ──
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if(!localStorage.getItem('pwa-dismissed')) {
+    document.getElementById('pwa-install-screen').style.display='flex';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-install-screen').style.display='none';
+  toast('✅ تم تثبيت التطبيق!', 3000);
+});
+
+function dismissInstallScreen(){
+  document.getElementById('pwa-install-screen').style.display='none';
+  localStorage.setItem('pwa-dismissed','1');
+}
+
+async function triggerPWAInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    const {outcome} = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('pwa-install-screen').style.display='none';
+    if(outcome==='accepted') toast('✅ تم تثبيت التطبيق بنجاح!',3000);
+  } else {
+    toast('📱 افتح القائمة ← "إضافة إلى الشاشة الرئيسية"', 4000);
+  }
+}
+
 // ── SERVICE WORKER: يعمل بدون انترنت + يتحدث تلقائياً عند توفر الإنترنت ──
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
@@ -2464,5 +2555,32 @@ document.getElementById('f-week-date').value=todayISO();
 
 updHeader();renderDash();
 </script>
+<!-- PWA Install Screen -->
+<div id="pwa-install-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0f2444 0%,#1a3a5c 60%,#0f2444 100%);flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;" dir="rtl">
+  <div style="max-width:360px;width:100%;">
+    <div style="width:90px;height:90px;background:linear-gradient(135deg,#f0c040,#c9a84c);border-radius:24px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(201,168,76,.45);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:48px;height:48px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <h1 style="color:#fff;font-size:24px;font-weight:900;margin:0 0 8px;font-family:'Tajawal',sans-serif;">اشتراكات الكهرباء</h1>
+    <p style="color:rgba(255,255,255,.65);font-size:14px;margin:0 0 28px;line-height:1.8;font-family:'Tajawal',sans-serif;">ثبّت التطبيق على جهازك للوصول السريع<br>بدون انترنت في أي وقت</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+      <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">📱</span>
+        <div style="text-align:right;"><div style="color:#fff;font-size:13px;font-weight:700;font-family:'Tajawal',sans-serif;">على الجوال</div><div style="color:rgba(255,255,255,.5);font-size:11px;font-family:'Tajawal',sans-serif;">Chrome ← القائمة ← "إضافة إلى الشاشة الرئيسية"</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">💻</span>
+        <div style="text-align:right;"><div style="color:#fff;font-size:13px;font-weight:700;font-family:'Tajawal',sans-serif;">على الكمبيوتر</div><div style="color:rgba(255,255,255,.5);font-size:11px;font-family:'Tajawal',sans-serif;">Chrome ← أيقونة ⊕ في شريط العنوان</div></div>
+      </div>
+    </div>
+    <button onclick="triggerPWAInstall()" style="width:100%;padding:16px;background:linear-gradient(135deg,#f0c040,#c9a84c);color:#0f2444;font-size:16px;font-weight:900;border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(201,168,76,.4);font-family:'Tajawal',sans-serif;">
+      ⬇️ تثبيت التطبيق الآن
+    </button>
+    <button onclick="dismissInstallScreen()" style="width:100%;padding:12px;background:transparent;color:rgba(255,255,255,.4);font-size:13px;border:1px solid rgba(255,255,255,.12);border-radius:14px;cursor:pointer;font-family:'Tajawal',sans-serif;">
+      متابعة بدون تثبيت
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
