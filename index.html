@@ -1988,7 +1988,17 @@ function saveEdit(){
     }
     inv.prevReading=parseFloat(document.getElementById('ei-prev-'+i).value||'0');
     inv.currReading=parseFloat(document.getElementById('ei-curr-'+i).value||'0');
+    // الحفاظ على السعر والحد الأدنى التاريخي — لا تغيّرهما عند التعديل
+    if(typeof inv.priceAtTime!=='number'||inv.priceAtTime<=0) inv.priceAtTime=price(s);
+    if(typeof inv.minAtTime!=='number') inv.minAtTime=minKw(s);
+    const wasPaid=inv.paid;
     inv.paid=document.getElementById('ei-paid-'+i).checked;
+    // إذا تم وضع علامة "مدفوعة" يدوياً، تأكد من حفظ paidAmount الصحيح بالسعر التاريخي
+    if(inv.paid&&!wasPaid){
+      inv.paidAmount=calcInv(inv,price(s),s).amt;
+    } else if(!inv.paid){
+      inv.paidAmount=inv.paidAmount||0;
+    }
   });
   save();cm('mEdit');renderAll();toast('✅ تم الحفظ');
 }
@@ -2625,10 +2635,13 @@ if('serviceWorker' in navigator){
 
 // ── ترحيل لمرة واحدة: استرجاع السعر التاريخي الحقيقي لكل فاتورة من المبلغ المدفوع فعلاً ──
 function migrateOldInvoicePrices(){
-  if(localStorage.getItem('elec_v4_price_migrated'))return;
+  if(localStorage.getItem('elec_v5_price_migrated'))return;
+  // مسح علامات الترحيل القديمة لإعادة المعالجة بالمنطق الصحيح
+  localStorage.removeItem('elec_v4_price_migrated');
+  localStorage.removeItem('elec_v4_price_fix3');
   let changed=false;
   subs.forEach(s=>{
-    const currentP=price(s), currentM=minKw(s);
+    const currentM=minKw(s);
     (s.invoices||[]).forEach(inv=>{
       if(typeof inv.priceAtTime!=='number'){
         const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
@@ -2636,16 +2649,16 @@ function migrateOldInvoicePrices(){
         // إذا الفاتورة مدفوعة بالكامل ولها paidAmount محفوظ، استخرج السعر الحقيقي منه (الأكثر دقة)
         if(inv.paid && inv.paidAmount>0 && consR>0){
           inv.priceAtTime=parseFloat((inv.paidAmount/consR).toFixed(4));
-        } else {
-          // لا يوجد دليل تاريخي — استخدم السعر الحالي كأفضل تقدير متاح
-          inv.priceAtTime=currentP;
         }
+        // للفواتير غير المدفوعة أو التي لا دليل رياضي على سعرها:
+        // لا نضع السعر الحالي لأن ذلك سيغير قيمة الفواتير القديمة خطأً
+        // سيتم معالجتها في fixBadMigratedPrices من خلال الاستنتاج من فواتير نفس الأسبوع
         changed=true;
       }
       if(typeof inv.minAtTime!=='number'){inv.minAtTime=currentM;changed=true;}
     });
   });
-  localStorage.setItem('elec_v4_price_migrated','1');
+  localStorage.setItem('elec_v5_price_migrated','1');
   if(changed) save();
 }
 migrateOldInvoicePrices();
@@ -2653,7 +2666,7 @@ migrateOldInvoicePrices();
 // ── إصلاح تصحيحي لمرة واحدة: تصحيح الفواتير التي أصابها الترحيل الخاطئ السابق ──
 // (الترحيل القديم كان يضع نفس سعر المشترك الحالي على كل فواتيره، فيكسر سعر الفواتير المدفوعة سابقاً)
 function fixBadMigratedPrices(){
-  if(localStorage.getItem('elec_v4_price_fix3'))return;
+  if(localStorage.getItem('elec_v5_price_fix'))return;
   let changed=false, fixedCount=0, inferredCount=0;
 
   // ── المرحلة 1: تصحيح كل فاتورة مدفوعة بالكامل بسعرها الحقيقي المستخرَج من paidAmount ──
@@ -2710,10 +2723,13 @@ function fixBadMigratedPrices(){
           changed=true;inferredCount++;
         }
       }
+      // ── الفواتير التي لا يوجد دليل على سعرها ولا استنتاج من نفس الأسبوع:
+      // لا تضع السعر الحالي عليها — احتفظ بـ priceAtTime كما هو إذا كان موجوداً
+      // وإذا لم يكن موجوداً أصلاً، اتركه بدون قيمة لتعتمد calcInv على السعر المرسل إليها
     });
   });
 
-  localStorage.setItem('elec_v4_price_fix3','1');
+  localStorage.setItem('elec_v5_price_fix','1');
   if(changed){save();console.log(`✅ تم تصحيح ${fixedCount} فاتورة مدفوعة + استنتاج سعر ${inferredCount} فاتورة غير مدفوعة`);}
 }
 fixBadMigratedPrices();
