@@ -1262,11 +1262,13 @@ function minBadge(ib){return ib.minApplied?` <span title="تم تطبيق الح
 function calcInv(inv,p,s){
   const c=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
   const cR=Math.round(c*100)/100; // الاستهلاك الفعلي بمنزلتين عشريتين (للعرض دائماً)
-  const minC=s?minKw(s):0;
+  // استخدام السعر والحد الأدنى المحفوظين وقت إنشاء الفاتورة (إن وُجدا) — لتثبيت الفواتير القديمة على سعرها التاريخي
+  const usedPrice=(typeof inv.priceAtTime==='number'&&inv.priceAtTime>0)?inv.priceAtTime:p;
+  const minC=(typeof inv.minAtTime==='number'&&inv.minAtTime>=0)?inv.minAtTime:(s?minKw(s):0);
   // إذا الاستهلاك الفعلي أقل من الحد الأدنى، يُحسب المبلغ على أساس الحد الأدنى
   const billC=(minC>0&&cR<minC)?minC:cR;
-  const amt=parseFloat((billC*p).toFixed(2)); // المبلغ بمنزلتين عشريتين بدون تقريب للأعلى
-  return{cons:cR,amt,billCons:billC,minApplied:(minC>0&&cR<minC)};
+  const amt=parseFloat((billC*usedPrice).toFixed(2)); // المبلغ بمنزلتين عشريتين بدون تقريب للأعلى
+  return{cons:cR,amt,billCons:billC,minApplied:(minC>0&&cR<minC),priceUsed:usedPrice};
 }
 function invPaidAmt(inv,p,s){const amt=calcInv(inv,p,s).amt;if(inv.paid)return amt;return Math.min(inv.paidAmount||0,amt);}
 function subCredit(s){return Math.max(0,s.credit||0);}
@@ -1888,7 +1890,7 @@ function saveInv(){
   const s=subs.find(x=>x.id===invSubId);if(!s)return;
   if(!s.invoices)s.invoices=[];
   const week=weekLabelFromDate(dateVal);
-  s.invoices.push({id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false,notes});
+  s.invoices.push({id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false,notes,priceAtTime:price(s),minAtTime:minKw(s)});
   document.getElementById('inv-notes').value='';
   save();cm('mInv');renderAll();toast(`✅ تمت إضافة الفاتورة لـ ${s.name}`);
 }
@@ -1909,7 +1911,7 @@ function addSub(){
   let cmin=null;
   {const vm=parseFloat(document.getElementById('f-cmin').value);if(!isNaN(vm)&&vm>=0)cmin=vm;}
   const week=weekLabelFromDate(dateVal);
-  const inv={id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false};
+  const inv={id:Date.now().toString(),week,weekDate:dateVal,prevReading:prev,currReading:curr,paid:false,priceAtTime:(cp&&cp>0)?cp:gp,minAtTime:(cmin!=null&&cmin>=0)?cmin:gMin};
   subs.push({id:Date.now().toString(),name,phone,customPrice:cp,customMin:cmin,invoices:[inv]});
   save();
   ['f-name','f-phone','f-prev','f-curr','f-cprice','f-cmin'].forEach(i=>document.getElementById(i).value='');
