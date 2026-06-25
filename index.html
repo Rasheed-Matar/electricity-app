@@ -972,6 +972,14 @@ let subs=JSON.parse(localStorage.getItem(SK)||'[]');
 let gp=parseFloat(localStorage.getItem(PK)||'0.65');
 const MK='elec_v4_gmin';
 let gMin=parseFloat(localStorage.getItem(MK)||'0');
+// ── سجل تاريخ تغييرات السعر العام: [{price, date}] مرتب تصاعدياً ──
+const PHK='elec_v4_price_history';
+let priceHistory=JSON.parse(localStorage.getItem(PHK)||'[]');
+// تأكد أن السعر الحالي موجود في السجل
+if(!priceHistory.length){
+  priceHistory=[{price:gp, date:'2000-01-01'}];
+  localStorage.setItem(PHK,JSON.stringify(priceHistory));
+}
 let pmMode='global', editId=null, invSubId=null;
 let openHist={}, openDetails={}, payFilter='all';
 let currentUser=null, userDocRef=null, fsUnsub=null, suppressSave=false;
@@ -981,9 +989,10 @@ function save(){
   localStorage.setItem(SK,JSON.stringify(subs));
   localStorage.setItem(PK,String(gp));
   localStorage.setItem(MK,String(gMin));
+  localStorage.setItem(PHK,JSON.stringify(priceHistory));
   updHeader();
   if(userDocRef && !suppressSave){
-    userDocRef.set({subs:subs,gp:gp,gMin:gMin,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+    userDocRef.set({subs:subs,gp:gp,gMin:gMin,priceHistory:priceHistory,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
       .then(()=>setSyncBadge(true))
       .catch(()=>setSyncBadge(false));
   }
@@ -1235,9 +1244,18 @@ function enterApp(user,data){
       subs=d.subs||[];
       gp=(typeof d.gp==='number')?d.gp:gp;
       gMin=(typeof d.gMin==='number')?d.gMin:gMin;
+      // تحميل سجل تاريخ الأسعار من السحابة
+      if(Array.isArray(d.priceHistory)&&d.priceHistory.length){
+        priceHistory=d.priceHistory;
+        priceHistory.sort((a,b)=>a.date.localeCompare(b.date));
+      } else {
+        // أول مزامنة — أنشئ سجلاً بالسعر الحالي
+        if(!priceHistory.length) priceHistory=[{price:gp,date:'2000-01-01'}];
+      }
       localStorage.setItem(SK,JSON.stringify(subs));
       localStorage.setItem(PK,String(gp));
       localStorage.setItem(MK,String(gMin));
+      localStorage.setItem(PHK,JSON.stringify(priceHistory));
       migrateOldInvoicePrices();
       fixBadMigratedPrices();
       renderAll();
@@ -2295,7 +2313,50 @@ function setPM(m){
 }
 function saveGP(){
   const v=parseFloat(document.getElementById('gPrice').value);
-  if(!isNaN(v)&&v>0){gp=v;save();renderAll();toast('✅ تم حفظ السعر');}
+  if(!isNaN(v)&&v>0){
+    const oldGp=gp;
+    gp=v;
+    // تسجيل تغيير السعر في السجل التاريخي
+    const todayStr=todayISO();
+    // لا تضف إدخالاً جديداً إذا كان السعر لم يتغير
+    if(Math.abs(oldGp-v)>0.0001){
+      // إذا يوجد إدخال بنفس اليوم، عدّله بدلاً من إضافة جديد
+      const existingToday=priceHistory.find(h=>h.date===todayStr);
+      if(existingToday){ existingToday.price=v; }
+      else { priceHistory.push({price:v, date:todayStr}); }
+      priceHistory.sort((a,b)=>a.date.localeCompare(b.date));
+      // ✅ تثبيت الفواتير الموجودة التي ليس لها priceAtTime بسعرها التاريخي الصحيح
+      fixInvoicesPriceAtTime();
+    }
+    save();renderAll();toast('✅ تم حفظ السعر الجديد — الفواتير القديمة محمية 🔒');
+  }
+}
+// تحديد السعر العام الصحيح لتاريخ معين من السجل التاريخي
+function priceAtDate(dateStr){
+  if(!priceHistory.length) return gp;
+  // ابحث عن آخر سعر قبل أو في نفس التاريخ
+  let result=priceHistory[0].price;
+  for(const h of priceHistory){
+    if(h.date<=dateStr) result=h.price;
+    else break;
+  }
+  return result;
+}
+// تثبيت priceAtTime لكل فاتورة ليس لها سعر محدد بعد
+function fixInvoicesPriceAtTime(){
+  let changed=false;
+  subs.forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      if(typeof inv.priceAtTime!=='number'||inv.priceAtTime<=0){
+        // استخدم السعر التاريخي الصحيح بناءً على تاريخ الفاتورة
+        const dateStr=inv.weekDate||todayISO();
+        const p=s.customPrice&&s.customPrice>0 ? s.customPrice : priceAtDate(dateStr);
+        inv.priceAtTime=p;
+        changed=true;
+      }
+    });
+  });
+  return changed;
 }
 function saveGMin(){
   const v=parseFloat(document.getElementById('gMinInp').value);
@@ -2636,23 +2697,23 @@ if('serviceWorker' in navigator){
 // ── ترحيل لمرة واحدة: استرجاع السعر التاريخي الحقيقي لكل فاتورة من المبلغ المدفوع فعلاً ──
 function migrateOldInvoicePrices(){
   if(localStorage.getItem('elec_v5_price_migrated'))return;
-  // مسح علامات الترحيل القديمة لإعادة المعالجة بالمنطق الصحيح
   localStorage.removeItem('elec_v4_price_migrated');
   localStorage.removeItem('elec_v4_price_fix3');
   let changed=false;
   subs.forEach(s=>{
     const currentM=minKw(s);
     (s.invoices||[]).forEach(inv=>{
-      if(typeof inv.priceAtTime!=='number'){
+      if(typeof inv.priceAtTime!=='number'||inv.priceAtTime<=0){
         const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
         const consR=Math.round(cons*100)/100;
-        // إذا الفاتورة مدفوعة بالكامل ولها paidAmount محفوظ، استخرج السعر الحقيقي منه (الأكثر دقة)
         if(inv.paid && inv.paidAmount>0 && consR>0){
+          // استخرج السعر الحقيقي من المبلغ المدفوع (الأدق)
           inv.priceAtTime=parseFloat((inv.paidAmount/consR).toFixed(4));
+        } else {
+          // استخدم السعر التاريخي الصحيح حسب تاريخ الفاتورة
+          const dateStr=inv.weekDate||todayISO();
+          inv.priceAtTime=s.customPrice&&s.customPrice>0 ? s.customPrice : priceAtDate(dateStr);
         }
-        // للفواتير غير المدفوعة أو التي لا دليل رياضي على سعرها:
-        // لا نضع السعر الحالي لأن ذلك سيغير قيمة الفواتير القديمة خطأً
-        // سيتم معالجتها في fixBadMigratedPrices من خلال الاستنتاج من فواتير نفس الأسبوع
         changed=true;
       }
       if(typeof inv.minAtTime!=='number'){inv.minAtTime=currentM;changed=true;}
@@ -2669,7 +2730,39 @@ function fixBadMigratedPrices(){
   if(localStorage.getItem('elec_v5_price_fix'))return;
   let changed=false, fixedCount=0, inferredCount=0;
 
-  // ── المرحلة 1: تصحيح كل فاتورة مدفوعة بالكامل بسعرها الحقيقي المستخرَج من paidAmount ──
+  // ── المرحلة 0: بناء سجل الأسعار التاريخي من الفواتير المدفوعة إن كان السجل فارغاً أو يحتوي على سعر واحد فقط ──
+  if(priceHistory.length<=1){
+    const weekPriceMap={};
+    subs.forEach(s=>{
+      (s.invoices||[]).forEach(inv=>{
+        if(inv.paid && inv.paidAmount>0 && inv.weekDate){
+          const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
+          const consR=Math.round(cons*100)/100;
+          if(consR>0){
+            const rp=parseFloat((inv.paidAmount/consR).toFixed(4));
+            if(!weekPriceMap[inv.weekDate]) weekPriceMap[inv.weekDate]=[];
+            weekPriceMap[inv.weekDate].push(rp);
+          }
+        }
+      });
+    });
+    // أضف كل سعر فريد مع تاريخه لسجل الأسعار
+    Object.keys(weekPriceMap).sort().forEach(dateStr=>{
+      const prices=weekPriceMap[dateStr];
+      const freq={};
+      prices.forEach(p=>{freq[p]=(freq[p]||0)+1;});
+      let best=prices[0],bestN=0;
+      Object.keys(freq).forEach(p=>{if(freq[p]>bestN){bestN=freq[p];best=parseFloat(p);}});
+      const already=priceHistory.find(h=>Math.abs(h.price-best)<0.001);
+      if(!already) priceHistory.push({price:best,date:dateStr});
+    });
+    priceHistory.sort((a,b)=>a.date.localeCompare(b.date));
+    // تأكد أن السعر الحالي موجود في النهاية
+    const lastH=priceHistory[priceHistory.length-1];
+    if(!lastH||Math.abs(lastH.price-gp)>0.001){
+      priceHistory.push({price:gp,date:todayISO()});
+    }
+  }
   subs.forEach(s=>{
     (s.invoices||[]).forEach(inv=>{
       if(inv.paid && inv.paidAmount>0){
@@ -2712,25 +2805,32 @@ function fixBadMigratedPrices(){
   const weekPriceFinal={};
   Object.keys(weekPriceMap).forEach(wd=>{weekPriceFinal[wd]=mostCommonPrice(weekPriceMap[wd]);});
 
-  // ── المرحلة 3: تطبيق سعر الأسبوع المُستنتَج على الفواتير غير المدفوعة بالكامل (لا دليل رياضي مباشر على سعرها) ──
+  // ── المرحلة 3: تطبيق السعر التاريخي الصحيح على الفواتير غير المدفوعة ──
   subs.forEach(s=>{
     (s.invoices||[]).forEach(inv=>{
-      const hasDirectProof=inv.paid && inv.paidAmount>0; // لها دليل مباشر من المرحلة 1
-      if(!hasDirectProof && inv.weekDate && weekPriceFinal[inv.weekDate]!=null){
-        const inferred=weekPriceFinal[inv.weekDate];
-        if(Math.abs((inv.priceAtTime||0)-inferred)>0.001){
-          inv.priceAtTime=inferred;
+      const hasDirectProof=inv.paid && inv.paidAmount>0;
+      if(!hasDirectProof){
+        // أولاً: جرّب الاستنتاج من فواتير نفس الأسبوع
+        if(inv.weekDate && weekPriceFinal[inv.weekDate]!=null){
+          const inferred=weekPriceFinal[inv.weekDate];
+          if(Math.abs((inv.priceAtTime||0)-inferred)>0.001){
+            inv.priceAtTime=inferred;
+            changed=true;inferredCount++;
+          }
+        } else if(!inv.priceAtTime || inv.priceAtTime<=0){
+          // لا يوجد دليل — استخدم السعر التاريخي الصحيح من سجل الأسعار
+          const dateStr=inv.weekDate||todayISO();
+          const histPrice=s.customPrice&&s.customPrice>0 ? s.customPrice : priceAtDate(dateStr);
+          inv.priceAtTime=histPrice;
           changed=true;inferredCount++;
         }
       }
-      // ── الفواتير التي لا يوجد دليل على سعرها ولا استنتاج من نفس الأسبوع:
-      // لا تضع السعر الحالي عليها — احتفظ بـ priceAtTime كما هو إذا كان موجوداً
-      // وإذا لم يكن موجوداً أصلاً، اتركه بدون قيمة لتعتمد calcInv على السعر المرسل إليها
     });
   });
 
   localStorage.setItem('elec_v5_price_fix','1');
-  if(changed){save();console.log(`✅ تم تصحيح ${fixedCount} فاتورة مدفوعة + استنتاج سعر ${inferredCount} فاتورة غير مدفوعة`);}
+  localStorage.setItem(PHK,JSON.stringify(priceHistory));
+  if(changed){save();console.log(`✅ تم تصحيح ${fixedCount} فاتورة مدفوعة + استنتاج سعر ${inferredCount} فاتورة`);}
 }
 fixBadMigratedPrices();
 
