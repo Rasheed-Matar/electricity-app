@@ -1238,6 +1238,7 @@ function enterApp(user,data){
       localStorage.setItem(SK,JSON.stringify(subs));
       localStorage.setItem(PK,String(gp));
       localStorage.setItem(MK,String(gMin));
+      migrateOldInvoicePrices();
       renderAll();
       suppressSave=false;
     } else {
@@ -2620,6 +2621,22 @@ if('serviceWorker' in navigator){
     window.location.reload();
   });
 }
+
+// ── ترحيل لمرة واحدة: تجميد سعر الفواتير القديمة على آخر سعر معروف قبل أي تعديل قادم ──
+function migrateOldInvoicePrices(){
+  if(localStorage.getItem('elec_v4_price_migrated'))return;
+  let changed=false;
+  subs.forEach(s=>{
+    const p=price(s), m=minKw(s);
+    (s.invoices||[]).forEach(inv=>{
+      if(typeof inv.priceAtTime!=='number'){inv.priceAtTime=p;changed=true;}
+      if(typeof inv.minAtTime!=='number'){inv.minAtTime=m;changed=true;}
+    });
+  });
+  localStorage.setItem('elec_v4_price_migrated','1');
+  if(changed) save();
+}
+migrateOldInvoicePrices();
 
 // set default date for add form
 document.getElementById('f-week-date').value=todayISO();
