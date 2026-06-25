@@ -1,4 +1,4 @@
-const CACHE = 'elec-v3';
+const CACHE = 'elec-v4';
 const FILES = [
   './',
   './index.html',
