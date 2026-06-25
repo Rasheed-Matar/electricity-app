@@ -1239,6 +1239,7 @@ function enterApp(user,data){
       localStorage.setItem(PK,String(gp));
       localStorage.setItem(MK,String(gMin));
       migrateOldInvoicePrices();
+      fixBadMigratedPrices();
       renderAll();
       suppressSave=false;
     } else {
@@ -2622,21 +2623,100 @@ if('serviceWorker' in navigator){
   });
 }
 
-// ── ترحيل لمرة واحدة: تجميد سعر الفواتير القديمة على آخر سعر معروف قبل أي تعديل قادم ──
+// ── ترحيل لمرة واحدة: استرجاع السعر التاريخي الحقيقي لكل فاتورة من المبلغ المدفوع فعلاً ──
 function migrateOldInvoicePrices(){
   if(localStorage.getItem('elec_v4_price_migrated'))return;
   let changed=false;
   subs.forEach(s=>{
-    const p=price(s), m=minKw(s);
+    const currentP=price(s), currentM=minKw(s);
     (s.invoices||[]).forEach(inv=>{
-      if(typeof inv.priceAtTime!=='number'){inv.priceAtTime=p;changed=true;}
-      if(typeof inv.minAtTime!=='number'){inv.minAtTime=m;changed=true;}
+      if(typeof inv.priceAtTime!=='number'){
+        const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
+        const consR=Math.round(cons*100)/100;
+        // إذا الفاتورة مدفوعة بالكامل ولها paidAmount محفوظ، استخرج السعر الحقيقي منه (الأكثر دقة)
+        if(inv.paid && inv.paidAmount>0 && consR>0){
+          inv.priceAtTime=parseFloat((inv.paidAmount/consR).toFixed(4));
+        } else {
+          // لا يوجد دليل تاريخي — استخدم السعر الحالي كأفضل تقدير متاح
+          inv.priceAtTime=currentP;
+        }
+        changed=true;
+      }
+      if(typeof inv.minAtTime!=='number'){inv.minAtTime=currentM;changed=true;}
     });
   });
   localStorage.setItem('elec_v4_price_migrated','1');
   if(changed) save();
 }
 migrateOldInvoicePrices();
+
+// ── إصلاح تصحيحي لمرة واحدة: تصحيح الفواتير التي أصابها الترحيل الخاطئ السابق ──
+// (الترحيل القديم كان يضع نفس سعر المشترك الحالي على كل فواتيره، فيكسر سعر الفواتير المدفوعة سابقاً)
+function fixBadMigratedPrices(){
+  if(localStorage.getItem('elec_v4_price_fix3'))return;
+  let changed=false, fixedCount=0, inferredCount=0;
+
+  // ── المرحلة 1: تصحيح كل فاتورة مدفوعة بالكامل بسعرها الحقيقي المستخرَج من paidAmount ──
+  subs.forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      if(inv.paid && inv.paidAmount>0){
+        const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
+        const consR=Math.round(cons*100)/100;
+        if(consR>0){
+          const realPrice=parseFloat((inv.paidAmount/consR).toFixed(4));
+          if(Math.abs((inv.priceAtTime||0)-realPrice)>0.001){
+            inv.priceAtTime=realPrice;
+            changed=true;fixedCount++;
+          }
+        }
+      }
+    });
+  });
+
+  // ── المرحلة 2: بناء خريطة سعر موثوق لكل أسبوع (weekDate) من الفواتير المدفوعة بالكامل فقط ──
+  const weekPriceMap={}; // {weekDate: [price1, price2, ...]}
+  subs.forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      if(inv.paid && inv.paidAmount>0 && inv.weekDate){
+        const cons=Math.max(0,(inv.currReading||0)-(inv.prevReading||0));
+        const consR=Math.round(cons*100)/100;
+        if(consR>0){
+          const realPrice=parseFloat((inv.paidAmount/consR).toFixed(4));
+          if(!weekPriceMap[inv.weekDate])weekPriceMap[inv.weekDate]=[];
+          weekPriceMap[inv.weekDate].push(realPrice);
+        }
+      }
+    });
+  });
+  // السعر الأكثر تكراراً لكل أسبوع (الأكثر موثوقية من المتوسط في حال وجود أسعار خاصة لمشتركين معينين)
+  function mostCommonPrice(arr){
+    const freq={};
+    arr.forEach(p=>{freq[p]=(freq[p]||0)+1;});
+    let best=arr[0],bestCount=0;
+    Object.keys(freq).forEach(p=>{if(freq[p]>bestCount){bestCount=freq[p];best=parseFloat(p);}});
+    return best;
+  }
+  const weekPriceFinal={};
+  Object.keys(weekPriceMap).forEach(wd=>{weekPriceFinal[wd]=mostCommonPrice(weekPriceMap[wd]);});
+
+  // ── المرحلة 3: تطبيق سعر الأسبوع المُستنتَج على الفواتير غير المدفوعة بالكامل (لا دليل رياضي مباشر على سعرها) ──
+  subs.forEach(s=>{
+    (s.invoices||[]).forEach(inv=>{
+      const hasDirectProof=inv.paid && inv.paidAmount>0; // لها دليل مباشر من المرحلة 1
+      if(!hasDirectProof && inv.weekDate && weekPriceFinal[inv.weekDate]!=null){
+        const inferred=weekPriceFinal[inv.weekDate];
+        if(Math.abs((inv.priceAtTime||0)-inferred)>0.001){
+          inv.priceAtTime=inferred;
+          changed=true;inferredCount++;
+        }
+      }
+    });
+  });
+
+  localStorage.setItem('elec_v4_price_fix3','1');
+  if(changed){save();console.log(`✅ تم تصحيح ${fixedCount} فاتورة مدفوعة + استنتاج سعر ${inferredCount} فاتورة غير مدفوعة`);}
+}
+fixBadMigratedPrices();
 
 // set default date for add form
 document.getElementById('f-week-date').value=todayISO();
